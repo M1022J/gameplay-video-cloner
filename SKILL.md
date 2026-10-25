@@ -5,6 +5,14 @@ allowed-tools: default_api google youtube image_gen
 ---
 # Gameplay Video Cloner (19-Repository Video Motion, Multi-Agent Swarm, 2D/3D Skeletal & Game Suite)
 
+> **Field Update v2 (2026-10-25)** — After a full real-world replication （末日生存房车 on TapTap Maker / UrhoX / Lua), the following are now **mandatory overlays** on the workflow below, detailed in `skill/references/field-lessons-maker-replication.md`:
+> 1. **Frame-by-frame event table**: Round 1 must produce an event table (event ID / timestamp / input / before→after state / evidence / confidence grade 观察到·重复验证·推测·未知）, not just 16 keyframes. All numbers come from OCR or pixel measurement — never from an agent eyeballing a frame.
+> 2. **Complete UI element inventory**: every UI element visible in the video gets a cropped reference + spec + a recorded disposition (generated asset / programmatic draw with reason). The inventory must be cleared before Round 3.
+> 3. **Dual-layer headless QA gate**: before any build, load the REAL game scripts headlessly (engine APIs stubbed) and drive every screen and the full main flow by state — logic assertions AND UI hit-tests. Run the whole suite at **DPR=1 and DPR=3** variants. A successful remote build proves compilation only, never playability.
+> 4. **Input coordinates are physical pixels**: divide by DPR before any design-space mapping (`logical = input / dpr`). Skipping this shipped a title screen whose buttons were all dead on real phones while every desktop test passed.
+> 5. **No original-publisher identity**: the original game's company name, registration/filing numbers and copyright lines are NOT game content — never copy them into the replica.
+> 6. **Non-HTML targets**: the 3-round swarm process, ledgers and QA gate apply unchanged; only the Round-3 HTML merge is replaced by Lead hand-integration against the module contracts (Maker/Lua adaptation).
+
 Reverse-engineer gameplay videos, screen recordings, GIFs, or video URLs into playable 1:1 game replicas without losing continuous motion trajectories, action frame timings, easing curves, or transient VFX effects. This skill packages **17 executable Python scripts** and **28 reference playbooks** (46 files total) across 19 open-source repositories.
 
 ## How This Skill Solves the "Single Static Image Blindness" Problem
@@ -100,5 +108,10 @@ python3 skills/gameplay-video-cloner/scripts/validate_architecture.py /working_d
 ## Gotchas
 
 - **Relying Only on 1fps Sparse Keyframes**: Fast attacks (`0.25s`), hit-stop freezes (`0.06s`), and hit-flashes (`0.05s`) vanish between 1fps keyframes. Always inspect `action_burst_strip_01.png` (30fps) and `onion_skin_trail_01.png` so fast motion and transient VFX are captured.
+- **Trusting 16 Keyframes for Rules**: Keyframes show layout, not rules. Prices, cycles and state transitions need the frame-by-frame **event table** (§1 of the field-lessons reference); anything the video never shows is grade 未知 and must not be implemented as fact.
+- **Input Without DPR Division**: Engine mouse/touch coordinates are physical pixels. Forgetting `input / dpr` before design-space mapping makes every button miss by the DPR factor on real phones — while all DPR=1 desktop tests stay green. Test DPR=3 in the harness.
+- **Build Success ≠ Playable**: A remote/CI build only proves compilation. Runtime UI crashes (e.g. one missing layout variable black-screening a menu on tap) pass every logic test. The dual-layer headless harness (§2 of the field-lessons reference) is the only acceptable pre-delivery gate.
+- **Nominal Canvas Size ≠ Drawn Size**: Rig canvases and generated sprites carry transparent padding; proportions (person vs vehicle vs wheel) must be measured on rendered composites, never computed from nominal asset dimensions.
+- **Copying the Original's Copyright Block**: Publisher company names / registration numbers on the original's title screen are identity info, not content. Replicating them into your build is both wrong and a review risk.
 - **Linear Motion Instead of Fitted Easing**: Never move UI popups, knockbacks, or jumps with constant linear speed when `vfx_timing_report.json` shows `easeOutBack` or parabolic gravity acceleration.
 - **Shaking Physics Coordinates**: Apply `trauma^2` camera shake strictly to `ctx.translate`, never to entity collision coordinates.

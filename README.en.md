@@ -21,8 +21,8 @@ Everything cited has been downloaded and merged here into a single ready-to-use 
 
 ## Documentation (split by topic, Chinese + English)
 
-- Chinese: `docs/zh/` — 01 总览 · 02 快速开始 · 03 工作流与蜂群架构 · 04 脚本参考 · 05 骨骼动画 · 06 上游与整合说明
-- English: `docs/en/` — 01 Overview · 02 Quick Start · 03 Workflow & Swarm · 04 Scripts Reference · 05 Skeletal Animation · 06 Upstream & Integration
+- Chinese: `docs/zh/` — 01 总览 · 02 快速开始 · 03 工作流与蜂群架构 · 04 脚本参考 · 05 骨骼动画 · 06 上游与整合说明 · 07 实测复盘硬规矩
+- English: `docs/en/` — 01 Overview · 02 Quick Start · 03 Workflow & Swarm · 04 Scripts Reference · 05 Skeletal Animation · 06 Upstream & Integration · 07 Field Lessons
 
 ## Upstream at a glance (`upstream/`, 19 sources)
 

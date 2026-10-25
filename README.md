@@ -19,8 +19,8 @@
 
 ## 分文档介绍（中英双语）
 
-- 中文版 `docs/zh/`：01 总览 · 02 快速开始 · 03 工作流与蜂群架构 · 04 脚本参考 · 05 骨骼动画 · 06 上游与整合说明
-- English `docs/en/`：01 Overview · 02 Quick Start · 03 Workflow & Swarm · 04 Scripts Reference · 05 Skeletal Animation · 06 Upstream & Integration
+- 中文版 `docs/zh/`：01 总览 · 02 快速开始 · 03 工作流与蜂群架构 · 04 脚本参考 · 05 骨骼动画 · 06 上游与整合说明 · 07 实测复盘硬规矩
+- English `docs/en/`：01 Overview · 02 Quick Start · 03 Workflow & Swarm · 04 Scripts Reference · 05 Skeletal Animation · 06 Upstream & Integration · 07 Field Lessons
 - English README: [`README.en.md`](README.en.md) · English sources: [`SOURCES.en.md`](SOURCES.en.md)
 
 ## 上游一览（`upstream/`，共 19 个来源）
