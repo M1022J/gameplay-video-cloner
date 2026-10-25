@@ -7,12 +7,13 @@
 本仓库是**整合版**：把原 skill 包（`gameplay-video-cloner` zip）里只有摘要占位、
 正文散落在开源来源的内容，全部下载并合并到一个项目里，打开即用。
 2026-10-25 增补第二版（视频运动与特效分析）：新增 5 个来源、2 个脚本、4 篇参考，来源总数 14 → 19；新版手册见 `HANDBOOK-v2.md`。
+2026-10-25 增补第三版（图片反推玩法）：新增 6 个来源、3 个脚本、4 篇参考，来源总数 19 → 25；新版手册见 `HANDBOOK-v3.md`。
 
 ## 组成
 
 | 部分 | 位置 | 说明 |
 |---|---|---|
-| Skill 本体 | `SKILL.md` + `skill/` | 入口文件 + 17 个可执行 Python 脚本（`skill/scripts/`）+ 28 篇参考摘要（`skill/references/`） |
+| Skill 本体 | `SKILL.md` + `skill/` | 入口文件 + 20 个可执行 Python 脚本（`skill/scripts/`）+ 32 篇参考摘要（`skill/references/`） |
 | 单文件手册 | `HANDBOOK.md` | 用户提供的 All-in-One 手册全文（870 行，内嵌 15 个脚本的完整版与全部 playbook） |
 | 上游原文 | `upstream/` | 14 个来源中本 skill 实际引用的全部内容（见下表与 `SOURCES.md`） |
 | 依赖 | `requirements.txt` | Python：Pillow、numpy；系统：ffmpeg / ffprobe |
@@ -23,7 +24,7 @@
 - English `docs/en/`：01 Overview · 02 Quick Start · 03 Workflow & Swarm · 04 Scripts Reference · 05 Skeletal Animation · 06 Upstream & Integration · 07 Field Lessons
 - English README: [`README.en.md`](README.en.md) · English sources: [`SOURCES.en.md`](SOURCES.en.md)
 
-## 上游一览（`upstream/`，共 19 个来源）
+## 上游一览（`upstream/`，共 25 个来源）
 
 | 目录 | 来源 | 收录内容 |
 |---|---|---|
@@ -46,6 +47,12 @@
 | `video-analyzer-skill/` | bsisduck/video-analyzer-skill | 全仓（自适应分档抽帧 + 音频峰值 + 并行子 Agent 分析） |
 | `motion-design-skill/` | LottieFiles/motion-design-skill | 全仓（时序/缓动查表与曲线拟合） |
 | `awesome-motion-design-agent-skills/` | frankxai/awesome-motion-design-agent-skills | 仅所引用的 `motion-director` + `web-motion-auditor` 两个 skill |
+| `replica-skill/` | Jakeschincariol/replica-skill | 全仓（第三版新增：净室逆向 recon/design/diff + 还原度打分） |
+| `image-to-code/` | yuzhworkhard-wq/image-to-code | 全仓（图层分类表 + 像素坐标 + 透明 PNG 硬规则） |
+| `phaser4-gamedev/` | yakoub-ai/phaser4-gamedev | 全仓（13 节 GDD 合成 phaser-gdd 等） |
+| `gamedesignos/` | DY-2026/GameDesignOS | 大仓摘录：根文档 + 7 个游戏设计 skill + adapters/contracts/docs/scripts（不含 36M assets） |
+| `develop-web-game/` | kursku/skills | 仅所引用的 `frontend/develop-web-game` skill（Playwright 试玩循环） |
+| `game-playtest/` | caucy2026/skills | 仅所引用的 `game-playtest` skill（截图试玩审计） |
 
 每个来源的 URL、固定 commit SHA、许可证与取舍细节见 [`SOURCES.md`](SOURCES.md)。
 16 个二进制媒体文件（演示 GIF/MP4/横幅图等）未随 GitHub 上传，清单与上游直达路径见

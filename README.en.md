@@ -9,12 +9,14 @@ mostly summaries, with the substance scattered across 14 open-source repositorie
 Everything cited has been downloaded and merged here into a single ready-to-use project.
 2026-10-25 v2 supplement (video motion & VFX analysis): 5 more sources, 2 more scripts,
 4 more references — 19 sources total. The v2 handbook is `HANDBOOK-v2.md`.
+2026-10-25 v3 supplement (image-to-gameplay reverse engineering): 6 more sources,
+3 more scripts, 4 more references — 25 sources total. The v3 handbook is `HANDBOOK-v3.md`.
 
 ## Contents
 
 | Part | Location | Description |
 |---|---|---|
-| The skill | `SKILL.md` + `skill/` | Entry point + 17 executable Python scripts (`skill/scripts/`) + 28 reference summaries (`skill/references/`) |
+| The skill | `SKILL.md` + `skill/` | Entry point + 20 executable Python scripts (`skill/scripts/`) + 32 reference summaries (`skill/references/`) |
 | Single-file handbook | `HANDBOOK.md` | The user-provided all-in-one handbook (870 lines, full embedded scripts + all playbooks) |
 | Upstream originals | `upstream/` | Everything this skill cites from its 14 sources (table below, details in `SOURCES.en.md`) |
 | Requirements | `requirements.txt` | Python: Pillow, numpy; system: ffmpeg / ffprobe |
@@ -24,7 +26,7 @@ Everything cited has been downloaded and merged here into a single ready-to-use 
 - Chinese: `docs/zh/` — 01 总览 · 02 快速开始 · 03 工作流与蜂群架构 · 04 脚本参考 · 05 骨骼动画 · 06 上游与整合说明 · 07 实测复盘硬规矩
 - English: `docs/en/` — 01 Overview · 02 Quick Start · 03 Workflow & Swarm · 04 Scripts Reference · 05 Skeletal Animation · 06 Upstream & Integration · 07 Field Lessons
 
-## Upstream at a glance (`upstream/`, 19 sources)
+## Upstream at a glance (`upstream/`, 25 sources)
 
 | Directory | Source | Included |
 |---|---|---|
@@ -47,6 +49,12 @@ Everything cited has been downloaded and merged here into a single ready-to-use 
 | `video-analyzer-skill/` | bsisduck/video-analyzer-skill | Whole repo (adaptive FPS tiering + audio peaks + parallel subagents) |
 | `motion-design-skill/` | LottieFiles/motion-design-skill | Whole repo (timing/easing lookup + curve fitting) |
 | `awesome-motion-design-agent-skills/` | frankxai/awesome-motion-design-agent-skills | Only the cited `motion-director` + `web-motion-auditor` skills |
+| `replica-skill/` | Jakeschincariol/replica-skill | Whole repo (v3: clean-room recon/design/diff + parity scoring) |
+| `image-to-code/` | yuzhworkhard-wq/image-to-code | Whole repo (layer classification + pixel coordinates + transparent-PNG hard rules) |
+| `phaser4-gamedev/` | yakoub-ai/phaser4-gamedev | Whole repo (13-section GDD synthesis, phaser-gdd, etc.) |
+| `gamedesignos/` | DY-2026/GameDesignOS | Monorepo extract: root docs + 7 game-design skills + adapters/contracts/docs/scripts (excludes the 36MB assets/) |
+| `develop-web-game/` | kursku/skills | Only the cited `frontend/develop-web-game` skill (Playwright playtest loop) |
+| `game-playtest/` | caucy2026/skills | Only the cited `game-playtest` skill (screenshot playtest audit) |
 
 URLs, pinned commit SHAs, licenses, and inclusion details: [`SOURCES.en.md`](SOURCES.en.md).
 16 binary media files (demo GIFs/MP4, banner images) are not in the GitHub upload;

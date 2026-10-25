@@ -21,3 +21,12 @@
 | `extract_audio_sfx_peaks.py` 跑同一视频 | 成功：`audio_peaks.json`，检出多处 medium 档音效峰值（如 2.9s / 3.2s / 3.5s） |
 | v2 包 46 文件与 v1 逐项 diff | 仅 SKILL.md 更新 + 新增 6 文件（2 脚本 + 4 参考），其余 39 文件与 v1 逐字节一致 |
 | 新增 5 个上游来源 | 全部克隆成功并记录 commit（SOURCES #15–19） |
+
+## 第三版增补验收（2026-10-25）
+| 检查 | 结果 |
+|---|---|
+| `infer_gameplay_from_image.py` 跑真实截图 | 成功：`recon_gameplay_spec.json` + `features.csv`（F01 视口/F02 HUD/… 特性矩阵） |
+| `imgdiff_parity.py` 跑两张相邻帧 | 成功：输出还原度 JSON（feature_parity_score / shippable）+ 差异图 |
+| `audit_png_assets.py` 跑普通截图 | 成功：正确判定无 alpha 的截图 `transparent_bg_ok: false` |
+| v3 包 53 文件与当前版逐项 diff | 仅 SKILL.md 更新 + 新增 7 文件（3 脚本 + 4 参考），其余 45 文件逐字节一致 |
+| 新增 6 个上游来源 | 全部克隆成功并记录 commit（SOURCES #20–25） |

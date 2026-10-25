@@ -40,3 +40,17 @@
 | 19 | [frankxai/awesome-motion-design-agent-skills](https://github.com/frankxai/awesome-motion-design-agent-skills) | `b45d60fa5b0f7b7d07331572416b80e17dcfd203` | `upstream/awesome-motion-design-agent-skills/` | 仅收录所引用的 `skills/motion-director` 与 `skills/web-motion-auditor`（5 点运动质量门禁）+ 原仓 README/LICENSE |
 
 第二版新增脚本依赖：`opencv-python-headless`（已加入 `requirements.txt`）。
+
+## 第三版增补（2026-10-25，图片反推玩法）
+
+来源：用户在 Gemini 对话中问「怎么根据图片反推游戏玩法」追加的 6 个仓库；新版包（53 文件：
+SKILL.md 更新 + 新脚本 3 + 新参考 4）与新版手册已一并整合（`HANDBOOK-v3.md`）。
+
+| # | 来源（GitHub） | Commit | 整合位置 | 收录范围与说明 |
+|---|---|---|---|---|
+| 20 | [Jakeschincariol/replica-skill](https://github.com/Jakeschincariol/replica-skill) | `77c9436fb3d18c3d58169efb8caf4fe906b0dc51` | `upstream/replica-skill/` | 全仓。净室逆向：replica-recon 侦察 → replica-design 规格 → replica-diff 逐屏差异审计与还原度打分 |
+| 21 | [yuzhworkhard-wq/image-to-code](https://github.com/yuzhworkhard-wq/image-to-code) | `886c882a05b3c44b27e1ac277d740eb3dc0b1a5b` | `upstream/image-to-code/` | 全仓。截图→图层分类表（背景/实体/HUD/特效）、像素坐标量测、透明精灵 PNG 硬规则 |
+| 22 | [yakoub-ai/phaser4-gamedev](https://github.com/yakoub-ai/phaser4-gamedev) | `1c1bf45dec3f0acbe8b2a963cc6dab93be31253a` | `upstream/phaser4-gamedev/` | 全仓。phaser-gdd 把侦察结果合成 13 节游戏设计文档（GDD）等 |
+| 23 | [DY-2026/GameDesignOS](https://github.com/DY-2026/GameDesignOS) | `ada4bf9e60c2c90a4c84866e4bfd191e3767d164` | `upstream/gamedesignos/` | 大仓（85M），摘录：根文档 + 7 个游戏设计 skill（concept-architect / proposal-writer / experience-analyzer 等）+ adapters/contracts/docs/scripts；未收 36M 的 assets/ 与 examples |
+| 24 | [kursku/skills](https://github.com/kursku/skills) | `346c313fd2ec241a088c68274da26c538422568b` | `upstream/develop-web-game/` | 大仓，仅收录 `frontend/develop-web-game/`。Playwright 试玩循环：动作脚本→截图→状态校验 |
+| 25 | [caucy2026/skills](https://github.com/caucy2026/skills) | `c4a46da319c83ff0ad3d383c7aed096def8db7ad` | `upstream/game-playtest/` | 仅收录 `game-playtest/`。截图驱动的试玩审计 |

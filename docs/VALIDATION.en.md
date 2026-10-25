@@ -22,3 +22,12 @@ commit list in `SOURCES.md` / `SOURCES.en.md`.
 | `extract_audio_sfx_peaks.py` on the same video | Pass: `audio_peaks.json` with multiple medium-tier SFX peaks (e.g. 2.9s / 3.2s / 3.5s) |
 | File-by-file diff of the v2 pack (46 files) against v1 | Only SKILL.md updated + 6 new files (2 scripts + 4 references); the other 39 files are byte-identical to v1 |
 | 5 new upstream sources | All cloned with commits recorded (SOURCES #15–19) |
+
+## V3 supplement validation (2026-10-25)
+| Check | Result |
+|---|---|
+| `infer_gameplay_from_image.py` on a real screenshot | Pass: `recon_gameplay_spec.json` + `features.csv` (F01 viewport / F02 HUD / … feature matrix) |
+| `imgdiff_parity.py` on two adjacent frames | Pass: parity JSON (feature_parity_score / shippable) + diff image |
+| `audit_png_assets.py` on ordinary screenshots | Pass: correctly flags alpha-less screenshots as `transparent_bg_ok: false` |
+| File-by-file diff of the v3 pack (53 files) against the current version | Only SKILL.md updated + 7 new files (3 scripts + 4 references); the other 45 files are byte-identical |
+| 6 new upstream sources | All cloned with commits recorded (SOURCES #20–25) |

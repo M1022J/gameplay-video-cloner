@@ -41,3 +41,18 @@ scripts + 4 new references) and the v2 handbook are integrated as well (`HANDBOO
 | 19 | [frankxai/awesome-motion-design-agent-skills](https://github.com/frankxai/awesome-motion-design-agent-skills) | `b45d60fa5b0f7b7d07331572416b80e17dcfd203` | `upstream/awesome-motion-design-agent-skills/` | Only the cited `skills/motion-director` and `skills/web-motion-auditor` (5-point motion quality gate) + origin README/LICENSE |
 
 New v2 script dependency: `opencv-python-headless` (added to `requirements.txt`).
+
+## V3 supplement (2026-10-25, image-to-gameplay reverse engineering)
+
+Added in the user's Gemini conversation ("how do you reverse-engineer gameplay from an
+image?"). The updated pack (53 files: updated SKILL.md + 3 new scripts + 4 new references)
+and the v3 handbook are integrated as well (`HANDBOOK-v3.md`).
+
+| # | Source (GitHub) | Commit | Integrated at | Scope & notes |
+|---|---|---|---|---|
+| 20 | [Jakeschincariol/replica-skill](https://github.com/Jakeschincariol/replica-skill) | `77c9436fb3d18c3d58169efb8caf4fe906b0dc51` | `upstream/replica-skill/` | Whole repo. Clean-room reverse engineering: replica-recon → replica-design → replica-diff per-screen parity scoring |
+| 21 | [yuzhworkhard-wq/image-to-code](https://github.com/yuzhworkhard-wq/image-to-code) | `886c882a05b3c44b27e1ac277d740eb3dc0b1a5b` | `upstream/image-to-code/` | Whole repo. Screenshot → layer classification (background/entities/HUD/FX), pixel-coordinate measurement, transparent-sprite PNG hard rules |
+| 22 | [yakoub-ai/phaser4-gamedev](https://github.com/yakoub-ai/phaser4-gamedev) | `1c1bf45dec3f0acbe8b2a963cc6dab93be31253a` | `upstream/phaser4-gamedev/` | Whole repo. phaser-gdd synthesizes recon output into a 13-section game design document (GDD), etc. |
+| 23 | [DY-2026/GameDesignOS](https://github.com/DY-2026/GameDesignOS) | `ada4bf9e60c2c90a4c84866e4bfd191e3767d164` | `upstream/gamedesignos/` | Monorepo (85MB); extract: root docs + 7 game-design skills (concept-architect / proposal-writer / experience-analyzer, …) + adapters/contracts/docs/scripts; the 36MB assets/ and examples were not included |
+| 24 | [kursku/skills](https://github.com/kursku/skills) | `346c313fd2ec241a088c68274da26c538422568b` | `upstream/develop-web-game/` | Monorepo; only `frontend/develop-web-game/`. Playwright playtest loop: action scripts → screenshots → state checks |
+| 25 | [caucy2026/skills](https://github.com/caucy2026/skills) | `c4a46da319c83ff0ad3d383c7aed096def8db7ad` | `upstream/game-playtest/` | Only `game-playtest/`. Screenshot-driven playtest auditing |

@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/DY-2026/GameDesignOS/main/contracts/workflow-run.schema.json",
+  "title": "GameDesignOS v1 Workflow Run",
+  "type": "object",
+  "required": ["schema_version", "workflow_id", "run_id", "status", "governance", "nodes", "edges"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0.0" },
+    "workflow_id": { "type": "string", "minLength": 1 },
+    "version": { "type": "string" },
+    "run_id": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["planned", "running", "blocked", "completed", "cancelled"] },
+    "current_node": { "type": ["string", "null"] },
+    "governance": {
+      "type": "object",
+      "required": ["evolver_required", "enforcement_mode", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "evolver_required": { "type": "boolean" },
+        "enforcement_mode": { "enum": ["shadow", "warn", "enforce"] },
+        "status": { "enum": ["not_started", "pending", "ready", "passed", "blocked", "skipped"] },
+        "intent_work_order_ref": { "type": ["string", "null"] },
+        "decision_ref": { "type": ["string", "null"] },
+        "voi_gate_ref": { "type": ["string", "null"] },
+        "ul_state_ref": {
+          "anyOf": [
+            { "type": "string", "pattern": "^UL-[A-Z0-9-]{3,}$" },
+            { "type": "null" }
+          ]
+        },
+        "rjr_authority_ref": { "type": ["string", "null"] },
+        "paranoia_review_ref": { "type": ["string", "null"] },
+        "human_gate_refs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "rollback_ref": { "type": ["string", "null"] },
+        "candidate_learning_refs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "retrospective_ref": { "type": ["string", "null"] },
+        "notes": { "type": "string" }
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "status"],
+        "additionalProperties": true,
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "type": { "type": "string", "minLength": 1 },
+          "status": { "enum": ["pending", "ready", "blocked", "done", "skipped"] }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to"],
+        "additionalProperties": false,
+        "properties": {
+          "from": { "type": "string", "minLength": 1 },
+          "to": { "type": "string", "minLength": 1 },
+          "condition": { "type": "string" }
+        }
+      }
+    }
+  }
+}
