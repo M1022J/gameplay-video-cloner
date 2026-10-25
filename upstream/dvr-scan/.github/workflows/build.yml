@@ -1,0 +1,128 @@
+# Build Python Source/Wheel Distributions of DVR-Scan
+name: Python Distribution
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  pull_request:
+    paths:
+      - dist/**
+      - dvr_scan/**
+      - tests/**
+      - pyproject.toml
+      - setup.py
+      - requirements*.txt
+      - uv.lock
+      - .github/workflows/build.yml
+      - .github/actions/setup-ffmpeg/**
+  push:
+    paths:
+      - dist/**
+      - dvr_scan/**
+      - tests/**
+      - pyproject.toml
+      - setup.py
+      - requirements*.txt
+      - uv.lock
+      - .github/workflows/build.yml
+      - .github/actions/setup-ffmpeg/**
+    branches:
+      - main
+      - release
+      - 'releases/**'
+    tags:
+      - v*-release
+  workflow_dispatch:
+
+jobs:
+  build:
+    # Skip scheduled runs in forks: GitHub attributes cron runs to the upstream
+    # workflow author, who then gets emailed when a fork's nightly build fails.
+    if: github.repository_owner == 'Breakthrough' || github.event_name != 'schedule'
+    env:
+        # Set below after building the final package.
+        dvr_scan_version: ""
+        UV_SYSTEM_PYTHON: 1
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-15, macos-latest, ubuntu-22.04, ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v10.3.0
+        with:
+          version: "0.5.11"
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Dependencies
+        run: |
+          uv pip install --upgrade build wheel virtualenv
+          # TODO: Figure out how to avoid installing the original OpenCV package.
+          uv pip install -e ".[dev]" -r docs/requirements.txt
+          # TODO(#257): Unpin OpenCV versions once we figure out why frame numbers are mismatching in tests.
+          # Use headless OpenCV variant on CI to reduce download size.
+          uv pip uninstall opencv-python opencv-contrib-python
+          uv pip install "opencv-contrib-python-headless<4.13" --only-binary :all:
+
+      - name: Setup FFmpeg
+        uses: ./.github/actions/setup-ffmpeg
+
+      - name: Unit Test
+        run: |
+          python -m pytest tests
+
+      - name: Build Package
+        shell: bash
+        run: |
+          python dist/pre_release.py
+          python -m build
+          echo "dvr_scan_version=`python -c \"import dvr_scan; print(dvr_scan.__version__.replace('-', '.'))\"`" >> "$GITHUB_ENV"
+
+      - name: Build Package (Headless)
+        shell: bash
+        run: |
+          python dist/build_headless.py
+          python -m build
+          git reset --hard HEAD
+
+      - name: Smoke Test (Source)
+        run: |
+          uv pip install dist/dvr_scan-${{ env.dvr_scan_version }}.tar.gz
+          python -m dvr_scan --version
+          python -m dvr_scan -i tests/resources/simple_movement.mp4 -so -df 4 -et 100
+          uv pip uninstall dvr-scan
+          uv pip install dist/dvr_scan_headless-${{ env.dvr_scan_version }}.tar.gz
+          python -m dvr_scan --version
+          python -m dvr_scan -i tests/resources/simple_movement.mp4 -so -df 4 -et 100
+          uv pip uninstall dvr-scan-headless
+
+      - name: Smoke Test (Wheel)
+        run: |
+          uv pip install dist/dvr_scan-${{ env.dvr_scan_version }}-py3-none-any.whl
+          python -m dvr_scan --version
+          python -m dvr_scan -i tests/resources/simple_movement.mp4 -so -df 4 -et 100
+          uv pip uninstall dvr-scan
+          uv pip install dist/dvr_scan_headless-${{ env.dvr_scan_version }}-py3-none-any.whl
+          python -m dvr_scan --version
+          python -m dvr_scan -i tests/resources/simple_movement.mp4 -so -df 4 -et 100
+          uv pip uninstall dvr-scan-headless
+
+      - name: Upload Package
+        if: ${{ matrix.python-version == '3.13' && matrix.os == 'ubuntu-latest' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: dvr-scan-dist
+          path: |
+            dist/*.tar.gz
+            dist/*.whl

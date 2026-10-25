@@ -25,8 +25,8 @@ cited content** together with the skill itself and the single-file handbook
 | Part | Location |
 |---|---|
 | Skill entry point | `SKILL.md` (repo root) |
-| 20 executable scripts | `skill/scripts/` |
-| 32 reference summaries | `skill/references/` |
+| 12 executable scripts | `skill/scripts/` |
+| 18 reference playbooks | `skill/references/` |
 | Single-file handbook (full embedded scripts + all playbooks) | `HANDBOOK.md` |
 | The 14 upstream sources, full text | `upstream/` (14 directories) |
 | This documentation (Chinese + English) | `docs/zh/`, `docs/en/` |

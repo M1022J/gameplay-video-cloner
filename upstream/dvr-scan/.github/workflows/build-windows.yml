@@ -1,0 +1,101 @@
+# Build Portable Windows EXE (x64) Distribution for DVR-Scan
+name: Windows Distribution
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  pull_request:
+    paths:
+      - dist/**
+      - dvr_scan/**
+      - tests/**
+  push:
+    paths:
+      - dist/**
+      - dvr_scan/**
+      - tests/**
+    tags:
+      - v*-release
+  workflow_dispatch:
+
+env:
+  ffmpeg_version: "8.0"
+  UV_SYSTEM_PYTHON: 1
+  UV_LINK_MODE: "symlink"
+
+
+jobs:
+  build:
+    # Skip scheduled runs in forks: GitHub attributes cron runs to the upstream
+    # workflow author, who then gets emailed when a fork's nightly build fails.
+    if: github.repository_owner == 'Breakthrough' || github.event_name != 'schedule'
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v10.3.0
+        with:
+          version: "0.5.11"
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Dependencies
+        run: |
+          uv pip install --upgrade pip build wheel virtualenv setuptools
+          uv pip install -r dist/requirements_windows.txt -r docs/requirements.txt
+
+      - name: Download FFMPEG ${{ env.ffmpeg_version }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download ${{ env.ffmpeg_version }} --repo GyanD/codexffmpeg --pattern "ffmpeg-${{ env.ffmpeg_version }}-full_build.7z"
+
+      - name: Unit Test
+        run: |
+          7z e ffmpeg-${{ env.ffmpeg_version }}-full_build.7z ffmpeg.exe -r
+          python -m pytest tests/
+
+      - name: Build DVR-Scan
+        run: |
+          python dist/pre_release.py --use-local-images
+          pyinstaller dist/dvr-scan.spec
+          python dist/post_release.py
+
+      - name: Assemble Distribution
+        run: |
+          7z e -odist/ffmpeg ffmpeg-${{ env.ffmpeg_version }}-full_build.7z LICENSE -r
+          Move-Item -Path ffmpeg.exe -Destination dist/dvr-scan/ffmpeg.exe
+          Move-Item -Path dist/ffmpeg/LICENSE -Destination dist/dvr-scan/LICENSE-FFMPEG -Force
+
+      - name: Upload
+        uses: actions/upload-artifact@v7
+        with:
+          name: DVR-Scan-win64_portable
+          path: dist/dvr-scan
+
+  test:
+    runs-on: windows-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: DVR-Scan-win64_portable
+          path: build
+
+      - name: Test Artifact
+        run: |
+          ./build/dvr-scan --version
+          ./build/dvr-scan --license
+          ./build/dvr-scan -i tests/resources/simple_movement.mp4 -so -et 5s -df 3
+          ./build/dvr-scan -i tests/resources/simple_movement.mp4 -et 5s -df 3 -m copy

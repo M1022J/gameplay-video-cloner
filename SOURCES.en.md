@@ -56,3 +56,30 @@ and the v3 handbook are integrated as well (`HANDBOOK-v3.md`).
 | 23 | [DY-2026/GameDesignOS](https://github.com/DY-2026/GameDesignOS) | `ada4bf9e60c2c90a4c84866e4bfd191e3767d164` | `upstream/gamedesignos/` | Monorepo (85MB); extract: root docs + 7 game-design skills (concept-architect / proposal-writer / experience-analyzer, …) + adapters/contracts/docs/scripts; the 36MB assets/ and examples were not included |
 | 24 | [kursku/skills](https://github.com/kursku/skills) | `346c313fd2ec241a088c68274da26c538422568b` | `upstream/develop-web-game/` | Monorepo; only `frontend/develop-web-game/`. Playwright playtest loop: action scripts → screenshots → state checks |
 | 25 | [caucy2026/skills](https://github.com/caucy2026/skills) | `c4a46da319c83ff0ad3d383c7aed096def8db7ad` | `upstream/game-playtest/` | Only `game-playtest/`. Screenshot-driven playtest auditing |
+
+## V4 supplement (2026-10-25, deduplicated core + long-video / sub-pixel / micro-detail)
+
+The user uploaded the v4 pack (31 files) asking to "remove the duplicates and add the
+few new ones": scripts 20 → 12 (16 merged away and deleted), references 32 → 18
+(consolidated into 5 domain folders; 24 old summaries deleted), plus these 16 new
+sources (25 → 41 total). Note: `GenielabsOpenSource/spine-animation-ai` is the same
+repo at the same commit as #7 under a different org name — not double-counted.
+
+| # | Source (GitHub) | Commit | Integrated at | Scope & notes |
+|---|---|---|---|---|
+| 26 | [KumarSashank/motiscope](https://github.com/KumarSashank/motiscope) | `c0ce3ddedfbe59f445b74372a064e908587a648a` | `upstream/motiscope/` | Whole repo. Frame micro-diff & sub-pixel motion (streamer/oscilloscope source) |
+| 27 | [GAIR-NLP/VidaForge](https://github.com/GAIR-NLP/VidaForge) | `fbbc745f6f74025a1c8c18e9ef610c0efccb0a4c` | `upstream/vidaforge/` | Whole repo. Long-video understanding |
+| 28 | [mugnimaestra/video-frames-skill](https://github.com/mugnimaestra/video-frames-skill) | `f0d30f9dc8274aa664ba68b528cd3b6d13dd3509` | `upstream/video-frames-skill/` | Whole repo. Frame-extraction skill |
+| 29 | [browser-use/video-use](https://github.com/browser-use/video-use) | `43cfc566833548093455c9d4a46bd69913b7e552` | `upstream/video-use/` | Whole repo. Video operations |
+| 30 | [Breakthrough/DVR-Scan](https://github.com/Breakthrough/DVR-Scan) | `52aa2288dd45e7d607eb7b6356b1e84e270e63e5` | `upstream/dvr-scan/` | Extract: source + docs (excludes dist/ installers, tests/ sample videos). Motion-event detection |
+| 31 | [snapcndev/snapcn](https://github.com/snapcndev/snapcn) | `ebbe43f388779c51b3e5465b95e03466c2c96267` | `upstream/snapcn/` | Extract: root docs (incl. MOTION.md) + `.claude/skills/motion-quality` + skills/rules (excludes the web app itself: app/registry/components/…). motion-quality: 0.01px sub-pixel trajectories |
+| 32 | [HKUDS/VideoRAG](https://github.com/HKUDS/VideoRAG) | `c412a093a820ef7a0e0dda31076ed871136198b3` | `upstream/videorag/` | Whole repo. Long-video RAG (bidirectional causal ledger source, incl. MovieChat ideas) |
+| 33 | [HKUDS/VideoAgent](https://github.com/HKUDS/VideoAgent) | `f207987e3cffb554aaa6ffdbe733efb30f4b51ed` | `upstream/videoagent/` | Extract: own code + VideoEdit + docs (excludes the 76MB assets/ media and the vendored third-party TTS/ASR projects under tools/) |
+| 34 | [Huc91/pixel-perfect-skill](https://github.com/Huc91/pixel-perfect-skill) | `2c677882743ebf0fcdc0bedebf055283182a04ce` | `upstream/pixel-perfect-skill/` | Whole repo. Pixel-perfect replication |
+| 35 | [garrytan/gstack](https://github.com/garrytan/gstack) | `669e59d65b48081547de9a3ae202122af5bbe065` | `upstream/gstack/` | Extract: excludes test/ (41MB fixtures) and the lib/diagram-render build artifact. Side-by-side fix-loop source |
+| 36 | [rastian/interaction-design-skills](https://github.com/rastian/interaction-design-skills) | `a3f092f9bd183eef8c25ec5ea7f0bb97505b94d3` | `upstream/interaction-design-skills/` | Whole repo. 24-point game micro-detail checklist source |
+| 37 | [ttengwang/awesome_long_form_video_understanding](https://github.com/ttengwang/awesome_long_form_video_understanding) | `0e25a035559d9e7d420a2a7f0a4724d4723ac2be` | `upstream/awesome-long-form-video-understanding/` | Whole repo. Long-video paper/resource list |
+| 38 | [afterxleep/agents](https://github.com/afterxleep/agents) | `ec4c354ad8f26690941353cf4f7516f804f78e91` | `upstream/afterxleep-agents/` | Whole repo |
+| 39 | [Intense-Visions/harness-engineering](https://github.com/Intense-Visions/harness-engineering) | `b691642acbe66968c571c93675318841287b7b9f` | `upstream/harness-engineering/` | Extract: root docs + docs (excludes the 28MB changes/ archive) + templates/examples/fixtures/.claude-plugin (excludes the agents/ platform mirrors and packages/ product source). Visual-regression harness source |
+| 40 | [vibeeval/vibecosystem](https://github.com/vibeeval/vibecosystem) | `3b763b1fb288f57bfa3cce76ef18184b96461a78` | `upstream/vibecosystem/` | Whole repo. visual-verdict 6D scoring (≥90 gate) source |
+| 41 | [uxkin/agent](https://github.com/uxkin/agent) | `6bb351e95de5ddce79bb6bbc5ccd4631eee49eb9` | `upstream/uxkin-agent/` | Whole repo. ui-from-screenshot (SAHI quadrant slicing) source |

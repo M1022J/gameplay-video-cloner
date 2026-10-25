@@ -31,3 +31,17 @@ commit list in `SOURCES.md` / `SOURCES.en.md`.
 | `audit_png_assets.py` on ordinary screenshots | Pass: correctly flags alpha-less screenshots as `transparent_bg_ok: false` |
 | File-by-file diff of the v3 pack (53 files) against the current version | Only SKILL.md updated + 7 new files (3 scripts + 4 references); the other 45 files are byte-identical |
 | 6 new upstream sources | All cloned with commits recorded (SOURCES #20–25) |
+
+## V4 validation (2026-10-25, deduplicated core edition)
+| Check | Result |
+|---|---|
+| py_compile on all 12 scripts | All pass |
+| `stream_long_video_indexer.py` on a real video | Pass: packed_timeline.md + frame_by_frame_micro_energy.json + keyframes |
+| `extract_micro_frame_deltas.py` | Pass: 24 3x delta patches + 10x amplified residual strip + heatmap + report |
+| `subpixel_motion_oscilloscope.py` | Pass: 73 frames at 0.01px, fitted a sharp_cubic_bezier_burst curve type |
+| `bidirectional_context_ledger.py` | init + export-brief both pass |
+| `slice_micro_detail_crops.py` | Pass: 4 quadrants + 3 zones + 8 2x micro-detail crops |
+| `process_and_audit_sprites.py audit` / `spine_and_swarm_pipeline.py route-engine` | Both produce output |
+| `visual_verdict_diff_loop.py` on two different frames | Pass: 67.86/100 REVISE + side-by-side heatmap panel |
+| Dedup audit | The 4 kept scripts + 8 kept references are byte-identical to before; every deleted script/reference is covered by a consolidated successor (per the SKILL.md consolidation table) |
+| 16 new upstream sources | All cloned with commits recorded (SOURCES #26–41) |

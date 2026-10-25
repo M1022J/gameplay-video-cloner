@@ -11,12 +11,16 @@ Everything cited has been downloaded and merged here into a single ready-to-use 
 4 more references — 19 sources total. The v2 handbook is `HANDBOOK-v2.md`.
 2026-10-25 v3 supplement (image-to-gameplay reverse engineering): 6 more sources,
 3 more scripts, 4 more references — 25 sources total. The v3 handbook is `HANDBOOK-v3.md`.
+2026-10-25 v4 (deduplicated core edition): per the user's request, 20 scripts were
+consolidated into **12 all-in-one scripts** (the 16 merged-away scripts were deleted) and
+32 references into **18 deep playbooks** (5 domain folders); 16 more sources
+(long-video / sub-pixel / micro-detail) were added — **41 sources total**.
 
 ## Contents
 
 | Part | Location | Description |
 |---|---|---|
-| The skill | `SKILL.md` + `skill/` | Entry point + 20 executable Python scripts (`skill/scripts/`) + 32 reference summaries (`skill/references/`) |
+| The skill | `SKILL.md` + `skill/` | Entry point + 12 executable Python scripts (`skill/scripts/`, v4 consolidated) + 18 reference playbooks (`skill/references/`, plus 1 local field-notes doc) |
 | Single-file handbook | `HANDBOOK.md` | The user-provided all-in-one handbook (870 lines, full embedded scripts + all playbooks) |
 | Upstream originals | `upstream/` | Everything this skill cites from its 14 sources (table below, details in `SOURCES.en.md`) |
 | Requirements | `requirements.txt` | Python: Pillow, numpy; system: ffmpeg / ffprobe |
@@ -26,7 +30,7 @@ Everything cited has been downloaded and merged here into a single ready-to-use 
 - Chinese: `docs/zh/` — 01 总览 · 02 快速开始 · 03 工作流与蜂群架构 · 04 脚本参考 · 05 骨骼动画 · 06 上游与整合说明 · 07 实测复盘硬规矩
 - English: `docs/en/` — 01 Overview · 02 Quick Start · 03 Workflow & Swarm · 04 Scripts Reference · 05 Skeletal Animation · 06 Upstream & Integration · 07 Field Lessons
 
-## Upstream at a glance (`upstream/`, 25 sources)
+## Upstream at a glance (`upstream/`, 41 sources)
 
 | Directory | Source | Included |
 |---|---|---|
@@ -55,6 +59,22 @@ Everything cited has been downloaded and merged here into a single ready-to-use 
 | `gamedesignos/` | DY-2026/GameDesignOS | Monorepo extract: root docs + 7 game-design skills + adapters/contracts/docs/scripts (excludes the 36MB assets/) |
 | `develop-web-game/` | kursku/skills | Only the cited `frontend/develop-web-game` skill (Playwright playtest loop) |
 | `game-playtest/` | caucy2026/skills | Only the cited `game-playtest` skill (screenshot playtest audit) |
+| `motiscope/` | KumarSashank/motiscope | Whole repo (v4: frame micro-diff / sub-pixel motion) |
+| `vidaforge/` | GAIR-NLP/VidaForge | Whole repo (long-video understanding) |
+| `video-frames-skill/` | mugnimaestra/video-frames-skill | Whole repo (frame extraction skill) |
+| `video-use/` | browser-use/video-use | Whole repo (video operations) |
+| `dvr-scan/` | Breakthrough/DVR-Scan | Extract: source + docs (excludes dist/ installers and tests/ sample videos) |
+| `snapcn/` | snapcndev/snapcn | Whole repo (motion-quality sub-pixel trajectories) |
+| `videorag/` | HKUDS/VideoRAG | Whole repo (long-video RAG, bidirectional context) |
+| `videoagent/` | HKUDS/VideoAgent | Extract: code + docs (excludes the 76MB assets/ media) |
+| `pixel-perfect-skill/` | Huc91/pixel-perfect-skill | Whole repo (pixel-perfect replication) |
+| `gstack/` | garrytan/gstack | Extract: excludes test/ (41MB of test fixtures) |
+| `interaction-design-skills/` | rastian/interaction-design-skills | Whole repo (24-point micro-detail checklist source) |
+| `awesome-long-form-video-understanding/` | ttengwang/awesome_long_form_video_understanding | Whole repo (long-video paper list) |
+| `afterxleep-agents/` | afterxleep/agents | Whole repo |
+| `harness-engineering/` | Intense-Visions/harness-engineering | Whole repo (visual-regression harness) |
+| `vibecosystem/` | vibeeval/vibecosystem | Whole repo (visual-verdict 6D scoring source) |
+| `uxkin-agent/` | uxkin/agent | Whole repo (ui-from-screenshot source) |
 
 URLs, pinned commit SHAs, licenses, and inclusion details: [`SOURCES.en.md`](SOURCES.en.md).
 16 binary media files (demo GIFs/MP4, banner images) are not in the GitHub upload;

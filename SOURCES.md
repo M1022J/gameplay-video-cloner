@@ -54,3 +54,28 @@ SKILL.md 更新 + 新脚本 3 + 新参考 4）与新版手册已一并整合（`
 | 23 | [DY-2026/GameDesignOS](https://github.com/DY-2026/GameDesignOS) | `ada4bf9e60c2c90a4c84866e4bfd191e3767d164` | `upstream/gamedesignos/` | 大仓（85M），摘录：根文档 + 7 个游戏设计 skill（concept-architect / proposal-writer / experience-analyzer 等）+ adapters/contracts/docs/scripts；未收 36M 的 assets/ 与 examples |
 | 24 | [kursku/skills](https://github.com/kursku/skills) | `346c313fd2ec241a088c68274da26c538422568b` | `upstream/develop-web-game/` | 大仓，仅收录 `frontend/develop-web-game/`。Playwright 试玩循环：动作脚本→截图→状态校验 |
 | 25 | [caucy2026/skills](https://github.com/caucy2026/skills) | `c4a46da319c83ff0ad3d383c7aed096def8db7ad` | `upstream/game-playtest/` | 仅收录 `game-playtest/`。截图驱动的试玩审计 |
+
+## 第四版增补（2026-10-25，去重核心版 + 长视频/亚像素/微细节）
+
+用户上传第四版包（31 文件）并要求「去掉重复的、增加个别新的」：脚本 20 → 12（合并删除 16 个）、
+参考 32 → 18（合并为 5 个主题文件夹、删除 24 篇旧摘要），同时新增以下 16 个来源（总数 25 → 41）。
+注：`GenielabsOpenSource/spine-animation-ai` 与已收录的 #7 为同一仓库同一 commit（仅组织名不同），不重复计数。
+
+| # | 来源（GitHub） | Commit | 整合位置 | 收录范围与说明 |
+|---|---|---|---|---|
+| 26 | [KumarSashank/motiscope](https://github.com/KumarSashank/motiscope) | `c0ce3ddedfbe59f445b74372a064e908587a648a` | `upstream/motiscope/` | 全仓。逐帧微差与亚像素运动分析（流式索引器/示波器来源） |
+| 27 | [GAIR-NLP/VidaForge](https://github.com/GAIR-NLP/VidaForge) | `fbbc745f6f74025a1c8c18e9ef610c0efccb0a4c` | `upstream/vidaforge/` | 全仓。长视频理解 |
+| 28 | [mugnimaestra/video-frames-skill](https://github.com/mugnimaestra/video-frames-skill) | `f0d30f9dc8274aa664ba68b528cd3b6d13dd3509` | `upstream/video-frames-skill/` | 全仓。抽帧 skill |
+| 29 | [browser-use/video-use](https://github.com/browser-use/video-use) | `43cfc566833548093455c9d4a46bd69913b7e552` | `upstream/video-use/` | 全仓。视频操作 |
+| 30 | [Breakthrough/DVR-Scan](https://github.com/Breakthrough/DVR-Scan) | `52aa2288dd45e7d607eb7b6356b1e84e270e63e5` | `upstream/dvr-scan/` | 摘录：源码 + 文档（未收 dist/ 安装包、tests/ 样例视频）。运动事件检测（微差条来源） |
+| 31 | [snapcndev/snapcn](https://github.com/snapcndev/snapcn) | `ebbe43f388779c51b3e5465b95e03466c2c96267` | `upstream/snapcn/` | 摘录：根文档（含 MOTION.md）+ `.claude/skills/motion-quality` + skills/rules（未收网站应用本体 app/registry/components 等）。motion-quality：0.01px 亚像素轨迹 |
+| 32 | [HKUDS/VideoRAG](https://github.com/HKUDS/VideoRAG) | `c412a093a820ef7a0e0dda31076ed871136198b3` | `upstream/videorag/` | 全仓。长视频 RAG（双向因果账本来源，含 MovieChat 思路） |
+| 33 | [HKUDS/VideoAgent](https://github.com/HKUDS/VideoAgent) | `f207987e3cffb554aaa6ffdbe733efb30f4b51ed` | `upstream/videoagent/` | 摘录：本体代码 + VideoEdit + 文档（未收 76M 的 assets/ 媒体与 tools/ 内嵌的第三方 TTS/ASR 项目群） |
+| 34 | [Huc91/pixel-perfect-skill](https://github.com/Huc91/pixel-perfect-skill) | `2c677882743ebf0fcdc0bedebf055283182a04ce` | `upstream/pixel-perfect-skill/` | 全仓。像素级还原 |
+| 35 | [garrytan/gstack](https://github.com/garrytan/gstack) | `669e59d65b48081547de9a3ae202122af5bbe065` | `upstream/gstack/` | 摘录：未收 test/（41M 测试夹具）与 lib/diagram-render 构建产物。并排对比修复循环来源 |
+| 36 | [rastian/interaction-design-skills](https://github.com/rastian/interaction-design-skills) | `a3f092f9bd183eef8c25ec5ea7f0bb97505b94d3` | `upstream/interaction-design-skills/` | 全仓。24 点游戏微细节清单来源 |
+| 37 | [ttengwang/awesome_long_form_video_understanding](https://github.com/ttengwang/awesome_long_form_video_understanding) | `0e25a035559d9e7d420a2a7f0a4724d4723ac2be` | `upstream/awesome-long-form-video-understanding/` | 全仓。长视频理解论文/资源清单 |
+| 38 | [afterxleep/agents](https://github.com/afterxleep/agents) | `ec4c354ad8f26690941353cf4f7516f804f78e91` | `upstream/afterxleep-agents/` | 全仓 |
+| 39 | [Intense-Visions/harness-engineering](https://github.com/Intense-Visions/harness-engineering) | `b691642acbe66968c571c93675318841287b7b9f` | `upstream/harness-engineering/` | 摘录：根文档 + docs（未收 changes/ 变更档案 28M）+ templates/examples/fixtures/.claude-plugin（未收 agents/ 多平台镜像与 packages/ 产品源码）。视觉回归 harness 来源 |
+| 40 | [vibeeval/vibecosystem](https://github.com/vibeeval/vibecosystem) | `3b763b1fb288f57bfa3cce76ef18184b96461a78` | `upstream/vibecosystem/` | 全仓。visual-verdict 6 维打分（≥90 门禁）来源 |
+| 41 | [uxkin/agent](https://github.com/uxkin/agent) | `6bb351e95de5ddce79bb6bbc5ccd4631eee49eb9` | `upstream/uxkin-agent/` | 全仓。ui-from-screenshot（SAHI 象限切片）来源 |

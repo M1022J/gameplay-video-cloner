@@ -30,3 +30,17 @@
 | `audit_png_assets.py` 跑普通截图 | 成功：正确判定无 alpha 的截图 `transparent_bg_ok: false` |
 | v3 包 53 文件与当前版逐项 diff | 仅 SKILL.md 更新 + 新增 7 文件（3 脚本 + 4 参考），其余 45 文件逐字节一致 |
 | 新增 6 个上游来源 | 全部克隆成功并记录 commit（SOURCES #20–25） |
+
+## 第四版验收（2026-10-25，去重核心版）
+| 检查 | 结果 |
+|---|---|
+| 12 个脚本 py_compile | 全部通过 |
+| `stream_long_video_indexer.py` 跑真实视频 | 成功：packed_timeline.md + frame_by_frame_micro_energy.json + 关键帧 |
+| `extract_micro_frame_deltas.py` | 成功：24 个 3x 微差补丁 + 10x 残差放大条 + 热力图 + 报告 |
+| `subpixel_motion_oscilloscope.py` | 成功：73 帧 0.01px 分析，拟合出 sharp_cubic_bezier_burst 曲线类型 |
+| `bidirectional_context_ledger.py` | init + export-brief 均成功 |
+| `slice_micro_detail_crops.py` | 成功：4 象限 + 3 功能区 + 8 张 2x 微细节裁剪 |
+| `process_and_audit_sprites.py audit` / `spine_and_swarm_pipeline.py route-engine` | 均成功输出 |
+| `visual_verdict_diff_loop.py` 两张不同帧对比 | 成功：67.86/100 判 REVISE + 三联图（原图/构建/热力图） |
+| 去重核对 | 保留的 4 脚本 + 8 参考与旧版逐字节一致；删除的 16 脚本/24 参考均已被新合并脚本/手册覆盖（对照 SKILL.md 合并表） |
+| 新增 16 个上游来源 | 全部克隆成功并记录 commit（SOURCES #26–41） |

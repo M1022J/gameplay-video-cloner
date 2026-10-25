@@ -8,12 +8,14 @@
 正文散落在开源来源的内容，全部下载并合并到一个项目里，打开即用。
 2026-10-25 增补第二版（视频运动与特效分析）：新增 5 个来源、2 个脚本、4 篇参考，来源总数 14 → 19；新版手册见 `HANDBOOK-v2.md`。
 2026-10-25 增补第三版（图片反推玩法）：新增 6 个来源、3 个脚本、4 篇参考，来源总数 19 → 25；新版手册见 `HANDBOOK-v3.md`。
+2026-10-25 第四版（去重核心版）：按用户要求去重——20 个脚本合并为 **12 个全能脚本**（被合并的 16 个旧脚本已删除）、
+32 篇参考合并为 **18 篇深度手册**（5 个主题文件夹）；同时新增 16 个来源（长视频/亚像素/微细节方向），来源总数 25 → **41**。
 
 ## 组成
 
 | 部分 | 位置 | 说明 |
 |---|---|---|
-| Skill 本体 | `SKILL.md` + `skill/` | 入口文件 + 20 个可执行 Python 脚本（`skill/scripts/`）+ 32 篇参考摘要（`skill/references/`） |
+| Skill 本体 | `SKILL.md` + `skill/` | 入口文件 + 12 个可执行 Python 脚本（`skill/scripts/`，第四版去重合并）+ 18 篇参考手册（`skill/references/`，另有 1 篇本地实战笔记） |
 | 单文件手册 | `HANDBOOK.md` | 用户提供的 All-in-One 手册全文（870 行，内嵌 15 个脚本的完整版与全部 playbook） |
 | 上游原文 | `upstream/` | 14 个来源中本 skill 实际引用的全部内容（见下表与 `SOURCES.md`） |
 | 依赖 | `requirements.txt` | Python：Pillow、numpy；系统：ffmpeg / ffprobe |
@@ -24,7 +26,7 @@
 - English `docs/en/`：01 Overview · 02 Quick Start · 03 Workflow & Swarm · 04 Scripts Reference · 05 Skeletal Animation · 06 Upstream & Integration · 07 Field Lessons
 - English README: [`README.en.md`](README.en.md) · English sources: [`SOURCES.en.md`](SOURCES.en.md)
 
-## 上游一览（`upstream/`，共 25 个来源）
+## 上游一览（`upstream/`，共 41 个来源）
 
 | 目录 | 来源 | 收录内容 |
 |---|---|---|
@@ -53,6 +55,22 @@
 | `gamedesignos/` | DY-2026/GameDesignOS | 大仓摘录：根文档 + 7 个游戏设计 skill + adapters/contracts/docs/scripts（不含 36M assets） |
 | `develop-web-game/` | kursku/skills | 仅所引用的 `frontend/develop-web-game` skill（Playwright 试玩循环） |
 | `game-playtest/` | caucy2026/skills | 仅所引用的 `game-playtest` skill（截图试玩审计） |
+| `motiscope/` | KumarSashank/motiscope | 全仓（第四版新增：逐帧微差/亚像素运动分析） |
+| `vidaforge/` | GAIR-NLP/VidaForge | 全仓（长视频理解） |
+| `video-frames-skill/` | mugnimaestra/video-frames-skill | 全仓（抽帧 skill） |
+| `video-use/` | browser-use/video-use | 全仓（视频操作） |
+| `dvr-scan/` | Breakthrough/DVR-Scan | 摘录：源码 + 文档（不含 dist 安装包与 tests 样例视频） |
+| `snapcn/` | snapcndev/snapcn | 全仓（motion-quality 亚像素轨迹） |
+| `videorag/` | HKUDS/VideoRAG | 全仓（长视频 RAG、双向上下文） |
+| `videoagent/` | HKUDS/VideoAgent | 摘录：代码与文档（不含 76M 的 assets 媒体） |
+| `pixel-perfect-skill/` | Huc91/pixel-perfect-skill | 全仓（像素级还原） |
+| `gstack/` | garrytan/gstack | 摘录：不含 test/（41M 测试夹具） |
+| `interaction-design-skills/` | rastian/interaction-design-skills | 全仓（24 点微细节清单来源） |
+| `awesome-long-form-video-understanding/` | ttengwang/awesome_long_form_video_understanding | 全仓（长视频理解论文清单） |
+| `afterxleep-agents/` | afterxleep/agents | 全仓 |
+| `harness-engineering/` | Intense-Visions/harness-engineering | 全仓（视觉回归 harness） |
+| `vibecosystem/` | vibeeval/vibecosystem | 全仓（visual-verdict 6 维打分来源） |
+| `uxkin-agent/` | uxkin/agent | 全仓（ui-from-screenshot 来源） |
 
 每个来源的 URL、固定 commit SHA、许可证与取舍细节见 [`SOURCES.md`](SOURCES.md)。
 16 个二进制媒体文件（演示 GIF/MP4/横幅图等）未随 GitHub 上传，清单与上游直达路径见

@@ -1,0 +1,126 @@
+#
+#      DVR-Scan: Video Motion Event Detection & Extraction Tool
+#   --------------------------------------------------------------
+#       [  Site: https://www.dvr-scan.com/                 ]
+#       [  Repo: https://github.com/Breakthrough/DVR-Scan  ]
+#
+# Copyright (C) 2016 Brandon Castellano <http://www.bcastell.com>.
+# DVR-Scan is licensed under the BSD 2-Clause License; see the included
+# LICENSE file, or visit one of the above pages for details.
+#
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dvr-scan"
+dynamic = ["version"]
+description = "Tool for finding and extracting motion events in video files (e.g. security camera footage)."
+readme = "README.md"
+license = { text = "BSD-2-Clause" }
+requires-python = ">=3.10"
+authors = [
+    { name = "Brandon Castellano", email = "brandon248@gmail.com" },
+]
+keywords = [
+    "analysis",
+    "computer-vision",
+    "video",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Environment :: Console :: Curses",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Multimedia :: Video :: Conversion",
+    "Topic :: Multimedia :: Video :: Non-Linear Editor",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "numpy",
+    "platformdirs",
+    "scenedetect[pyav]~=0.7.2",
+    "tqdm",
+    "pillow",
+    # TODO(#257): Unpin OpenCV versions once we figure out why frame numbers are mismatching in tests.
+    "opencv-contrib-python<4.13",
+    # scenedetect has a hard dependency on opencv-python, which installs into the same
+    # cv2 directory as opencv-contrib-python above. Both packages must resolve to the
+    # same version or the cv2 install is corrupted (e.g. opencv-python 5.x files mixed
+    # with contrib 4.x broke imports). TODO: Remove once scenedetect makes OpenCV an
+    # optional extra so we can depend on the contrib variant alone.
+    "opencv-python<4.13",
+    "screeninfo",
+    "tkinterdnd2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+]
+
+[project.scripts]
+dvr-scan = "dvr_scan.__main__:main"
+dvr-scan-app = "dvr_scan.app.__main__:main"
+
+[project.urls]
+"Bug Tracker" = "https://github.com/Breakthrough/DVR-Scan/issues"
+Documentation = "https://www.dvr-scan.com/docs"
+Homepage = "https://www.dvr-scan.com/"
+Repository = "https://github.com/Breakthrough/DVR-Scan"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["dvr_scan*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "dvr_scan.__version__"}
+
+[tool.ruff]
+exclude = [
+    "docs"
+]
+line-length = 100
+indent-width = 4
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = [
+    # flake8-bugbear
+    "B",
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # isort
+    "I",
+    # TODO - Add additional rule sets (https://docs.astral.sh/ruff/rules/):
+    # pyupgrade
+    #"UP",
+    # flake8-simplify
+    #"SIM",
+]
+fixable = ["ALL"]
+unfixable = []
+
+[tool.pytest.ini_options]
+addopts = "--verbose"
+python_files = ["tests/*.py"]

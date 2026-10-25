@@ -1,0 +1,63 @@
+# Update www.dvr-scan.com
+# TODO(#173): Add versioning for documentation. Right now we only show docs for the latest release.
+name: Update Website
+
+on:
+  push:
+    branches:
+      - release
+    paths:
+      - "docs/**"
+      - "website/**"
+  workflow_dispatch:
+
+env:
+  ffmpeg_version: "8.0"
+  UV_SYSTEM_PYTHON: 1
+
+
+jobs:
+  update_site:
+    runs-on: ubuntu-latest
+    if: github.repository == 'Breakthrough/DVR-Scan'
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v10.3.0
+        with:
+          version: "0.5.11"
+          python-version: "3.13"
+
+      - name: Install Dependencies
+        run: |
+          uv pip install -r docs/requirements.txt
+
+      - name: Generate Website
+        run: |
+          git rm docs/index_docs.md
+          mkdocs build -f website/mkdocs.yml
+          git reset --hard HEAD
+
+      - name: Update Website
+        run: |
+          git fetch origin gh-pages
+          git checkout gh-pages
+          git rm * -r -f --ignore-unmatch
+          git checkout HEAD -- .nojekyll
+          git checkout HEAD -- CNAME
+          git add website/build/
+          git mv website/build/* . -f -k
+          git rm website/build/* -r -f --ignore-unmatch
+          git config --global user.name github-actions
+          git config --global user.email github-actions@github.com
+          git commit -a -m "[docs] @${{ github.triggering_actor }}: Generate Website" \
+            -m "Commit: ${{ github.sha }}"
+          git push

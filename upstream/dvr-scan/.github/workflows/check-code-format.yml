@@ -1,0 +1,51 @@
+# Check DVR-Scan code lint warnings and formatting.
+name: Static Analysis
+
+on:
+  pull_request:
+    paths:
+      - dvr_scan/**
+      - tests/**
+  push:
+    paths:
+      - dvr_scan/**
+      - tests/**
+
+env:
+  UV_SYSTEM_PYTHON: 1
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v10.3.0
+        with:
+          version: "0.5.11"
+          python-version: "3.13"
+
+      - name: Install Dependencies
+        run: |
+          uv pip install --upgrade pip
+          uv pip install --upgrade yapf toml ruff
+
+      - name: Check Code Format (yapf)
+        if: ${{ hashFiles('.style.yapf') != '' }}
+        run: |
+          python -m yapf --diff --recursive dvr_scan/
+          python -m yapf --diff --recursive tests/
+
+      - name: Static Analysis (ruff)
+        if: ${{ hashFiles('.style.yapf') == '' }}
+        run: |
+          uv pip install --upgrade ruff
+          python -m ruff check
+          python -m ruff format --check

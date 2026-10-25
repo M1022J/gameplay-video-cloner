@@ -1,48 +1,36 @@
-# 04 · Scripts Reference (skill/scripts/, 20 scripts)
+# 04 · Scripts Reference (skill/scripts/, 12 scripts)
 
-## Video analysis
+The v4 edition (2026-10-25) consolidated everything into 12 all-in-one scripts with
+zero overlap. Parentheses name the old scripts each one replaces.
+
+## Long video & micro-diff (new in v4)
 | Script | Purpose | Basic usage |
 |---|---|---|
-| `analyze_gameplay_video.py` | All-in-one telemetry: frames + contact sheet + HUD variance map + scene cuts + palette → telemetry.json | `analyze_gameplay_video.py <video> <out_dir> [--frames 16]` |
-| `extract_video_frames.py` | Extract frames by fps/range, resized as runtime texture sequences | `extract_video_frames.py <video> <out_dir> [--fps N --width W]` |
-| `sheet_contact.py` | Build a numbered contact sheet from a frames directory | `sheet_contact.py <frames_dir> <out.png> [--cols 4]` |
+| `stream_long_video_indexer.py` | O(1)-memory streaming scan of 30–60+ min videos: 32x18 tile micro-diff + cumulative drift detection, packed_timeline.md + micro-energy JSON (replaces analyze_gameplay_video / extract_video_frames / sheet_contact) | `stream_long_video_indexer.py <video> <out_dir> [--stride 1]` |
+| `extract_micro_frame_deltas.py` | 3x zoomed delta-patch strips of just the changing bounding box + 10x amplified residual strips | `extract_micro_frame_deltas.py <video> <out_dir> [--start S --duration S]` |
+| `subpixel_motion_oscilloscope.py` | 0.01px sub-pixel centroid trajectories + loop-period / Bezier velocity-curve fitting | `subpixel_motion_oscilloscope.py <video> <out.json> [--roi x,y,w,h]` |
+| `bidirectional_context_ledger.py` | Bidirectional causal ledger: rolling cross-chunk state + backward causal backfill + economy-curve fitting (init / append-chunk / export-brief) | `bidirectional_context_ledger.py init <ledger.json>` |
 
-## Art & skeleton (Spine chain)
+## Motion, audio & image recon (kept from earlier editions)
 | Script | Purpose | Basic usage |
 |---|---|---|
-| `extract_sprites.py` | Crop a sprite/UI element from a frame, optionally remove solid background | `extract_sprites.py <frame> <out> [--crop x,y,w,h --remove-bg]` |
-| `chroma_key_magenta.py` | Remove #FF00FF magenta (or custom) chroma key and auto-trim | `chroma_key_magenta.py <in> <out> [--tolerance 45 --trim]` |
-| `provider_stub.py` | Provider-neutral adapter interface for image/video generation models | Import as a library; no standalone CLI |
-| `position_parts.py` | Auto-position separated body-part PNGs onto the assembled reference → layout.json | `position_parts.py --reference <img> --parts <dir>` |
-| `build_spine_json.py` | Build Spine 4.2 skeleton.json (bone hierarchy + 6 animation presets) from a layout | `build_spine_json.py --config layout.json [--output skeleton.json]` |
-| `make_atlas.py` | Pack part PNGs into a Spine .atlas + spritesheet PNG | `make_atlas.py --parts <dir> [--name skeleton]` |
-| `generate_spine_player.py` | Generate a standalone HTML5 Canvas skeletal-animation player | `generate_spine_player.py --skeleton skeleton.json` |
+| `extract_motion_trails_and_vfx.py` | 30/60fps burst strips + optical-flow onion-skin trails + VFX timing JSON | `extract_motion_trails_and_vfx.py <video> <out_dir>` |
+| `extract_audio_sfx_peaks.py` | 50ms RMS audio peaks → aligned SFX events | `extract_audio_sfx_peaks.py <video> <out.json>` |
+| `infer_gameplay_from_image.py` | Reverse-engineer gameplay from one screenshot → recon_gameplay_spec.json + features.csv | `infer_gameplay_from_image.py <image> <out_dir>` |
 
-## Orchestration & QA
+## Micro-detail, sprites & skeletal swarm (consolidated in v4)
 | Script | Purpose | Basic usage |
 |---|---|---|
-| `orchestrate_subagents.py` | Generate 5 isolated subagent packets, mission_brief.json, sdd_ledger.md | `orchestrate_subagents.py --project-dir <dir> --game-title <title>` |
-| `swarm_task_board.py` | DAG task board: init / complete (auto-unblocks downstream) / status | `swarm_task_board.py --board <file> init\|complete\|status` |
-| `detect_engine_router.py` | Route engine / skeletal suite / genre / skill set from a request, outputs JSON | `detect_engine_router.py --workspace . --prompt "<request>"` |
-| `merge_subagent_modules.py` | 3-point spot check: files exist, zero TODO/FIXME/placeholders | `merge_subagent_modules.py <file...>` |
-| `validate_architecture.py` | 8-gate architecture validation of a finished game (Constants/reset/rAF/dt/dual input/shake/audio/render_game_to_text) | `validate_architecture.py <game.html>` |
+| `slice_micro_detail_crops.py` | SAHI 2x2 overlapping quadrants + 1:1 zones + Top-8 2x micro-widget crops + rare accent-color extraction | `slice_micro_detail_crops.py <image.png> <out_dir>` |
+| `process_and_audit_sprites.py` | Sprite cropping / #FF00FF chroma-key cleaning / RGBA alpha audit in one (replaces extract_sprites / chroma_key_magenta / audit_png_assets / provider_stub) | `process_and_audit_sprites.py {crop,chroma,audit} ...` |
+| `spine_and_swarm_pipeline.py` | Engine routing + 5-subagent swarm init/verify + Spine rig & atlas building (replaces 8 micro-scripts) | `spine_and_swarm_pipeline.py {route-engine,init-swarm,verify-swarm,build-spine-rig} ...` |
 
-## Video motion & VFX (v2 additions, require opencv)
+## Verification loop
 | Script | Purpose | Basic usage |
 |---|---|---|
-| `extract_motion_trails_and_vfx.py` | High-FPS burst strips + optical-flow onion-skin trails + VFX timing JSON (shake / hit-stop / flash / easing fit) | `extract_motion_trails_and_vfx.py <video> <out_dir> [--top-peaks N --fps N]` |
-| `extract_audio_sfx_peaks.py` | 50ms RMS audio peaks → aligned SFX events (audio_peaks.json) | `extract_audio_sfx_peaks.py <video> <out.json>` |
+| `visual_verdict_diff_loop.py` | Headless render + 3-panel Delta-E heatmap + 6D scoring (≥90 gate) (replaces imgdiff_parity) | `visual_verdict_diff_loop.py <ref.png> <built.png/html/url> <out_dir>` |
+| `validate_architecture.py` | Runtime architecture audit (constants / dt / dual input / shake / audio synth / render_game_to_text) | `validate_architecture.py <game.html>` |
 
-See `docs/en/07-video-motion-and-vfx.md`.
-
-## Image-to-gameplay recon (v3 additions, some require opencv)
-| Script | Purpose | Basic usage |
-|---|---|---|
-| `infer_gameplay_from_image.py` | Reverse-engineer gameplay from one screenshot: recon_gameplay_spec.json + features.csv matrix | `infer_gameplay_from_image.py <image> <out_dir>` |
-| `imgdiff_parity.py` | Pixel-level parity score of original vs clone screenshot (with diff image) | `imgdiff_parity.py <orig.png> <clone.png> [--diff-out p] [--features csv]` |
-| `audit_png_assets.py` | Audit sprite PNGs for clean transparent backgrounds (corner alpha / transparent ratio) | `audit_png_assets.py <file-or-dir>` |
-
-See `docs/en/08-image-to-gameplay.md`.
-
-Note: Section 7 of `HANDBOOK.md` embeds full-length versions of these scripts (minor
-detail differences vs. the zip versions) — the two copies are worth cross-reading. The v2 handbook is `HANDBOOK-v2.md`.
+Motion & VFX: `docs/en/07-video-motion-and-vfx.md`. Image recon:
+`docs/en/08-image-to-gameplay.md`. Long video / sub-pixel / micro-detail QA:
+`docs/en/09-long-video-and-micro-detail-qa.md`.

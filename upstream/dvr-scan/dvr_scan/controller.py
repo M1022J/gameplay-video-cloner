@@ -1,0 +1,300 @@
+#
+#      DVR-Scan: Video Motion Event Detection & Extraction Tool
+#   --------------------------------------------------------------
+#       [  Site: https://www.dvr-scan.com/                 ]
+#       [  Repo: https://github.com/Breakthrough/DVR-Scan  ]
+#
+# Copyright (C) 2016 Brandon Castellano <http://www.bcastell.com>.
+# DVR-Scan is licensed under the BSD 2-Clause License; see the included
+# LICENSE file, or visit one of the above pages for details.
+#
+"""``dvr_scan.controller`` Module
+
+This module manages the DVR-Scan program control flow, starting with `run_dvr_scan()`.
+"""
+
+import glob
+import logging
+import os
+import time
+import typing as ty
+from pathlib import Path
+
+from scenedetect import FrameTimecode
+
+import dvr_scan
+from dvr_scan.cli import get_cli_parser
+from dvr_scan.config import ConfigLoadFailure, ConfigRegistry, RegionValueDeprecated
+from dvr_scan.report import write_events_csv, write_events_json
+from dvr_scan.scanner import DetectionResult, DetectorType, MotionEvent, MotionScanner, OutputMode
+from dvr_scan.shared import ScanSettings, init_logging, init_scanner, logfile_path, setup_logger
+
+logger = logging.getLogger("dvr_scan")
+
+LOGFILE_PATH = logfile_path(name_prefix="dvr-scan")
+
+
+def _preprocess_args(args):
+    """Perform some preprocessing and validation of command line arguments, returning a
+    boolean indicating if the validation succeeded, and the set of validated arguments."""
+    # -i/--input
+    # Each entry in args.input is a list of paths or globs we need to expand and combine.
+    input_files = []
+    for files in args.input:
+        for file in files:
+            path = Path(file)
+            if path.is_file():
+                # Use existing files as-is so that filenames containing glob metacharacters
+                # (e.g. `[R]`, common in camera recordings) are not treated as patterns (#171).
+                expanded = [path]
+            else:
+                # Expand wildcards, sorted by filename (case-insensitive) so that multiple
+                # inputs are concatenated in a predictable order regardless of filesystem.
+                matches = (
+                    match for match in glob.glob(file, recursive=True) if os.path.isfile(match)
+                )
+                expanded = [
+                    Path(match) for match in sorted(matches, key=lambda m: (os.path.normcase(m), m))
+                ]
+            if not expanded:
+                logger.error("Error: Input file does not exist:\n  %s", file)
+                return False, None
+            input_files += expanded
+    args.input = input_files
+    # NOTE: If -o/--output was given without an extension, one is appended for the
+    # effective output mode in `init_scanner` (the mode may come from a config file).
+    # --report: validate the format up front so we don't fail after a long scan.
+    if hasattr(args, "report") and Path(args.report).suffix.lower() not in (".csv", ".json"):
+        logger.error(
+            "Error: Unknown report format for %s: file extension must be .csv or .json.",
+            args.report,
+        )
+        return False, None
+    # -roi/--region-of-interest
+    if hasattr(args, "region_of_interest") and args.region_of_interest:
+        original_roi = args.region_of_interest
+        try:
+            args.region_of_interest = RegionValueDeprecated(
+                value=" ".join(original_roi), allow_size=True
+            ).value
+        except ValueError:
+            logger.error(
+                "Error: Invalid value for ROI: %s. ROI must be specified as a rectangle of"
+                " the form `x,y,w,h` or the max window size `w,h` (commas/spaces are ignored)."
+                " For example: -roi 200,250 50,100",
+                " ".join(original_roi),
+            )
+            return False, None
+    return True, args
+
+
+def parse_settings() -> ty.Optional[ScanSettings]:
+    """Parse command line options and load config file settings."""
+    # We defer printing the debug log until we know where to put it.
+    init_log = []
+    failed_to_load_config = True
+    debug_mode = False
+    config = ConfigRegistry()
+    config_load_error = None
+    # Try to load config from user settings folder.
+    try:
+        user_config = ConfigRegistry()
+        user_config.load()
+        config = user_config
+        init_logging(args=None, config=config)
+    except ConfigLoadFailure as ex:
+        config_load_error = ex
+    # Parse CLI args, override config if an override was specified on the command line.
+    try:
+        args = get_cli_parser(config).parse_args()
+        if args.ignore_user_config:
+            config_load_error = None
+            config = ConfigRegistry()
+        debug_mode = args.debug
+        init_logging(args=args, config=config)
+        init_log += [(logging.INFO, "DVR-Scan %s" % dvr_scan.__version__)]
+        if config_load_error and not hasattr(args, "config"):
+            raise config_load_error
+        if debug_mode:
+            init_log += config.consume_init_log()
+        if hasattr(args, "config"):
+            config_setting = ConfigRegistry()
+            config_setting.load(args.config)
+            init_logging(args, config_setting)
+            config = config_setting
+        init_log += config.consume_init_log()
+        if config.get("save-log"):
+            setup_logger(
+                logfile_path=LOGFILE_PATH,
+                max_log_files=config.get("max-log-files"),
+                name_prefix="dvr-scan",
+            )
+        failed_to_load_config = False
+    except ConfigLoadFailure as ex:
+        failed_to_load_config = True
+        config_load_error = ex
+        init_log += ex.init_log
+        if ex.reason is not None:
+            init_log += [(logging.ERROR, "Error: %s" % str(ex.reason).replace("\t", "  "))]
+    finally:
+        for log_level, log_str in init_log:
+            logger.log(log_level, log_str)
+
+    if failed_to_load_config:
+        logger.critical("Failed to load config file.")
+        logger.debug("Error loading config file:", exc_info=config_load_error)
+        if debug_mode:
+            raise config_load_error
+        # Intentionally suppress the exception in release mode since we've already logged the
+        # failure reason to the user above. We can now exit with an error code.
+        return None
+
+    if config.config_dict:
+        logger.debug("Loaded configuration:\n%s", str(config.config_dict))
+
+    validated, args = _preprocess_args(args)
+    if not validated:
+        return None
+    logger.debug("Program arguments:\n%s", str(args))
+    settings = ScanSettings(args=args, config=config)
+
+    # Validate that the specified motion detector is available on this system.
+    try:
+        detector_type = settings.get("bg-subtractor")
+        bg_subtractor = DetectorType[detector_type.upper()]
+    except KeyError:
+        logger.error("Error: Unknown background subtraction type: %s", detector_type)
+        return None
+    if not bg_subtractor.value.is_available():
+        if bg_subtractor == DetectorType.MOG2_CUDA:
+            logger.error("MOG2_CUDA requires a CUDA-enabled build of the `opencv-python` package!")
+        else:
+            logger.error(
+                f"Method {bg_subtractor.name} is not available, you may need to run: "
+                "`pip install opencv-contrib-python`"
+            )
+        return None
+
+    return settings
+
+
+def _write_report(settings: ScanSettings, scanner: MotionScanner, result: DetectionResult):
+    """Write the detected events to the file specified by --report, if set.
+
+    The format is chosen by file extension (.csv or .json, validated at startup).
+    Relative paths are joined with the output directory when one is set."""
+    report = settings.get_arg("report")
+    if not report:
+        return
+    path = Path(report)
+    if not path.is_absolute():
+        output_dir = settings.get("output-dir")
+        if output_dir:
+            path = Path(output_dir) / path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.suffix.lower() == ".json":
+        with open(path, "w") as file:
+            write_events_json(
+                file,
+                result.event_list,
+                input_files=settings.get_arg("input"),
+                frame_rate=float(scanner.frame_rate),
+                frames_processed=result.num_frames,
+            )
+    else:
+        with open(path, "w", newline="") as file:
+            write_events_csv(file, result.event_list)
+    logger.info("Report written to %s", path)
+
+
+_TIMECODE_LIST_LABELS = {
+    "parts": "Comma-separated timecode values (start-end):",
+    "timecodes": "Comma-separated timecode values:",
+    "lines": "Timecode values (one event per line, start-end):",
+}
+"""Log message printed before the timecode list for each `timecode-list-format`."""
+
+
+def format_timecode_list(event_list: ty.List[MotionEvent], list_format: str = "timecodes") -> str:
+    """Format detected motion events as a list of timecodes (#78).
+
+    Arguments:
+        event_list: Detected motion events.
+        list_format: One of the `timecode-list-format` config values:
+            `parts`: `start-end,start-end,...` (syntax of `mkvmerge --split parts:`)
+            `timecodes`: `start,end,start,end,...` (syntax of `mkvmerge --split timecodes:`)
+            `lines`: one `start-end` pair per line (accepted as file input)
+    """
+    list_format = list_format.lower()
+    if list_format == "timecodes":
+        return ",".join(
+            timecode
+            for event in event_list
+            for timecode in (event.start.get_timecode(), event.end.get_timecode())
+        )
+    parts = [
+        "%s-%s" % (event.start.get_timecode(), event.end.get_timecode()) for event in event_list
+    ]
+    if list_format == "lines":
+        return "\n".join(parts)
+    assert list_format == "parts", list_format
+    return ",".join(parts)
+
+
+def run_dvr_scan(
+    settings: ScanSettings,
+) -> ty.List[ty.Tuple[FrameTimecode, FrameTimecode]]:
+    """Run DVR-Scan scanning logic using validated `settings` from `parse_settings()`."""
+
+    scanner = init_scanner(settings)
+
+    # Scan video for motion with specified parameters.
+    processing_start = time.time()
+    result = scanner.scan()
+    if result is None:
+        logger.debug("Exiting early, scan() returned None.")
+        return
+    processing_time = time.time() - processing_start
+
+    # Display results and performance.
+    processing_rate = float(result.num_frames) / processing_time
+    logger.info(
+        "Processed %d frames read in %3.1f secs (avg %3.1f FPS).",
+        result.num_frames,
+        processing_time,
+        processing_rate,
+    )
+    _write_report(settings, scanner, result)
+    if not result.event_list:
+        logger.info("No motion events detected in input.")
+        return
+    logger.info("Detected %d motion events in input.", len(result.event_list))
+    if result.event_list:
+        output_strs = [
+            "-------------------------------------------------------------",
+            "|   Event #    |  Start Time  |   Duration   |   End Time   |",
+            "-------------------------------------------------------------",
+        ]
+        output_strs += [
+            "|  Event %4d  |  %s  |  %s  |  %s  |"
+            % (
+                i + 1,
+                event.start.get_timecode(precision=1),
+                (event.end - event.start).get_timecode(precision=1),
+                event.end.get_timecode(precision=1),
+            )
+            for i, event in enumerate(result.event_list)
+        ]
+        output_strs += ["-------------------------------------------------------------"]
+        logger.info("List of motion events:\n%s", "\n".join(output_strs))
+        list_format = str(settings.get("timecode-list-format")).lower()
+        logger.info(_TIMECODE_LIST_LABELS[list_format])
+        timecodes = format_timecode_list(result.event_list, list_format)
+        logger.info(timecodes)
+        if settings.get("quiet-mode"):
+            # The logger's stdout handler is disabled in quiet mode, but the timecode
+            # list must always be printed as scripts depend on it (#265).
+            print(timecodes)
+
+    if scanner.output_mode != OutputMode.SCAN_ONLY:
+        logger.info("Motion events written to disk.")
