@@ -5,13 +5,14 @@
 2D/3D 骨骼动画、物理/控制器、HUD/音频合成与 QA 验收。
 
 本仓库是**整合版**：把原 skill 包（`gameplay-video-cloner` zip）里只有摘要占位、
-正文散落在 14 个开源来源的内容，全部下载并合并到一个项目里，打开即用。
+正文散落在开源来源的内容，全部下载并合并到一个项目里，打开即用。
+2026-10-25 增补第二版（视频运动与特效分析）：新增 5 个来源、2 个脚本、4 篇参考，来源总数 14 → 19；新版手册见 `HANDBOOK-v2.md`。
 
 ## 组成
 
 | 部分 | 位置 | 说明 |
 |---|---|---|
-| Skill 本体 | `SKILL.md` + `skill/` | 入口文件 + 15 个可执行 Python 脚本（`skill/scripts/`）+ 24 篇参考摘要（`skill/references/`） |
+| Skill 本体 | `SKILL.md` + `skill/` | 入口文件 + 17 个可执行 Python 脚本（`skill/scripts/`）+ 28 篇参考摘要（`skill/references/`） |
 | 单文件手册 | `HANDBOOK.md` | 用户提供的 All-in-One 手册全文（870 行，内嵌 15 个脚本的完整版与全部 playbook） |
 | 上游原文 | `upstream/` | 14 个来源中本 skill 实际引用的全部内容（见下表与 `SOURCES.md`） |
 | 依赖 | `requirements.txt` | Python：Pillow、numpy；系统：ffmpeg / ffprobe |
@@ -22,7 +23,7 @@
 - English `docs/en/`：01 Overview · 02 Quick Start · 03 Workflow & Swarm · 04 Scripts Reference · 05 Skeletal Animation · 06 Upstream & Integration
 - English README: [`README.en.md`](README.en.md) · English sources: [`SOURCES.en.md`](SOURCES.en.md)
 
-## 上游一览（`upstream/`）
+## 上游一览（`upstream/`，共 19 个来源）
 
 | 目录 | 来源 | 收录内容 |
 |---|---|---|
@@ -40,6 +41,11 @@
 | `game-creator/` | PlayableIntelligence/game-creator | `skills/ agents/ templates/ scripts/ tests/` + 根文档（不含 140MB `assets/` 与 70MB `examples/` 媒体库，见 `SOURCES.md`） |
 | `awesome-gamedev-agent-skills/` | gamedev-skills/awesome-gamedev-agent-skills | 全仓（74 个跨引擎技能） |
 | `claude-code-game-studios/` | Donchitos/Claude-Code-Game-Studios | 全仓（49 个工作室 Agent + 钩子/规则） |
+| `web-motion-skill/` | Schmandarine/web-motion-skill | 全仓（第二版新增：宏观-微观高帧率动作拆解） |
+| `senior-computer-vision/` | alirezarezvani/claude-skills | 仅所引用的 `senior-computer-vision` skill（OpenCV 光流/洋葱皮轨迹） |
+| `video-analyzer-skill/` | bsisduck/video-analyzer-skill | 全仓（自适应分档抽帧 + 音频峰值 + 并行子 Agent 分析） |
+| `motion-design-skill/` | LottieFiles/motion-design-skill | 全仓（时序/缓动查表与曲线拟合） |
+| `awesome-motion-design-agent-skills/` | frankxai/awesome-motion-design-agent-skills | 仅所引用的 `motion-director` + `web-motion-auditor` 两个 skill |
 
 每个来源的 URL、固定 commit SHA、许可证与取舍细节见 [`SOURCES.md`](SOURCES.md)。
 16 个二进制媒体文件（演示 GIF/MP4/横幅图等）未随 GitHub 上传，清单与上游直达路径见

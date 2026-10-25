@@ -14,3 +14,11 @@ Executed locally against the integrated project (not just build logs):
 Structure check: 2,300+ text files in the repo; the 40 files of `skill/` match the
 original zip one-to-one; the 14 directories under `upstream/` correspond exactly to the
 commit list in `SOURCES.md` / `SOURCES.en.md`.
+
+## V2 supplement validation (2026-10-25)
+| Check | Result |
+|---|---|
+| `extract_motion_trails_and_vfx.py` on a real video (OpenCV) | Pass: 3 burst strips + 3 onion-skin trail images + `vfx_timing_report.json` |
+| `extract_audio_sfx_peaks.py` on the same video | Pass: `audio_peaks.json` with multiple medium-tier SFX peaks (e.g. 2.9s / 3.2s / 3.5s) |
+| File-by-file diff of the v2 pack (46 files) against v1 | Only SKILL.md updated + 6 new files (2 scripts + 4 references); the other 39 files are byte-identical to v1 |
+| 5 new upstream sources | All cloned with commits recorded (SOURCES #15–19) |

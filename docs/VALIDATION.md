@@ -13,3 +13,11 @@
 
 结构核对：仓库内文本文件 2,362 个；`skill/` 本体 40 文件与原始 zip 逐一对齐；
 `upstream/` 14 个来源目录与 `SOURCES.md` 的 commit 清单一一对应。
+
+## 第二版增补验收（2026-10-25）
+| 检查 | 结果 |
+|---|---|
+| `extract_motion_trails_and_vfx.py` 跑真实视频（OpenCV） | 成功：3 组动作条 + 3 张洋葱皮轨迹图 + `vfx_timing_report.json` |
+| `extract_audio_sfx_peaks.py` 跑同一视频 | 成功：`audio_peaks.json`，检出多处 medium 档音效峰值（如 2.9s / 3.2s / 3.5s） |
+| v2 包 46 文件与 v1 逐项 diff | 仅 SKILL.md 更新 + 新增 6 文件（2 脚本 + 4 参考），其余 39 文件与 v1 逐字节一致 |
+| 新增 5 个上游来源 | 全部克隆成功并记录 commit（SOURCES #15–19） |

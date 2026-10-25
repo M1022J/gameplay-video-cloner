@@ -7,12 +7,14 @@ engine routing, 2D/3D skeletal animation, physics/controllers, HUD/audio synthes
 This is the **integrated edition**: in the original skill package (zip) the body text was
 mostly summaries, with the substance scattered across 14 open-source repositories.
 Everything cited has been downloaded and merged here into a single ready-to-use project.
+2026-10-25 v2 supplement (video motion & VFX analysis): 5 more sources, 2 more scripts,
+4 more references — 19 sources total. The v2 handbook is `HANDBOOK-v2.md`.
 
 ## Contents
 
 | Part | Location | Description |
 |---|---|---|
-| The skill | `SKILL.md` + `skill/` | Entry point + 15 executable Python scripts (`skill/scripts/`) + 24 reference summaries (`skill/references/`) |
+| The skill | `SKILL.md` + `skill/` | Entry point + 17 executable Python scripts (`skill/scripts/`) + 28 reference summaries (`skill/references/`) |
 | Single-file handbook | `HANDBOOK.md` | The user-provided all-in-one handbook (870 lines, full embedded scripts + all playbooks) |
 | Upstream originals | `upstream/` | Everything this skill cites from its 14 sources (table below, details in `SOURCES.en.md`) |
 | Requirements | `requirements.txt` | Python: Pillow, numpy; system: ffmpeg / ffprobe |
@@ -22,7 +24,7 @@ Everything cited has been downloaded and merged here into a single ready-to-use 
 - Chinese: `docs/zh/` — 01 总览 · 02 快速开始 · 03 工作流与蜂群架构 · 04 脚本参考 · 05 骨骼动画 · 06 上游与整合说明
 - English: `docs/en/` — 01 Overview · 02 Quick Start · 03 Workflow & Swarm · 04 Scripts Reference · 05 Skeletal Animation · 06 Upstream & Integration
 
-## Upstream at a glance (`upstream/`)
+## Upstream at a glance (`upstream/`, 19 sources)
 
 | Directory | Source | Included |
 |---|---|---|
@@ -40,6 +42,11 @@ Everything cited has been downloaded and merged here into a single ready-to-use 
 | `game-creator/` | PlayableIntelligence/game-creator | `skills/ agents/ templates/ scripts/ tests/` + root docs (excludes the 140MB `assets/` and 70MB `examples/` media libraries; see `SOURCES.en.md`) |
 | `awesome-gamedev-agent-skills/` | gamedev-skills/awesome-gamedev-agent-skills | Whole repo (74 cross-engine skills) |
 | `claude-code-game-studios/` | Donchitos/Claude-Code-Game-Studios | Whole repo (49 studio agents + hooks/rules) |
+| `web-motion-skill/` | Schmandarine/web-motion-skill | Whole repo (v2: macro-to-micro high-FPS motion drill-down) |
+| `senior-computer-vision/` | alirezarezvani/claude-skills | Only the cited `senior-computer-vision` skill (OpenCV optical flow / onion-skin trails) |
+| `video-analyzer-skill/` | bsisduck/video-analyzer-skill | Whole repo (adaptive FPS tiering + audio peaks + parallel subagents) |
+| `motion-design-skill/` | LottieFiles/motion-design-skill | Whole repo (timing/easing lookup + curve fitting) |
+| `awesome-motion-design-agent-skills/` | frankxai/awesome-motion-design-agent-skills | Only the cited `motion-director` + `web-motion-auditor` skills |
 
 URLs, pinned commit SHAs, licenses, and inclusion details: [`SOURCES.en.md`](SOURCES.en.md).
 16 binary media files (demo GIFs/MP4, banner images) are not in the GitHub upload;

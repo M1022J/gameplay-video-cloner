@@ -25,3 +25,19 @@ Downloaded: 2026-10-25, via `git clone --depth 1` (same for the Gist). Integrati
 - Python 3 + `Pillow`, `numpy` (see `requirements.txt`)
 - System tools `ffmpeg` / `ffprobe` (required by the frame-extraction and telemetry scripts)
 - Node.js (optional toolchains of some upstream skills; not required by this skill's scripts)
+
+## V2 supplement (2026-10-25, video motion & VFX analysis)
+
+Added in the user's Gemini conversation to fix "static single-image blindness" (continuous
+action and hit effects not visible). The updated pack (46 files: updated SKILL.md + 2 new
+scripts + 4 new references) and the v2 handbook are integrated as well (`HANDBOOK-v2.md`).
+
+| # | Source (GitHub) | Commit | Integrated at | Scope & notes |
+|---|---|---|---|---|
+| 15 | [Schmandarine/web-motion-skill](https://github.com/Schmandarine/web-motion-skill) | `74b7359277140f518cd33be224e6f86c158b629a` | `upstream/web-motion-skill/` | Whole repo. Macro (16/24-tile contact sheets) → micro (30/60fps burst strips) drill-down + Disney 12 principles of motion |
+| 16 | [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | `6d2f02ea077eead1bee5411a31bcc6db5a11a70c` | `upstream/senior-computer-vision/` | Monorepo; only `engineering-team/skills/senior-computer-vision/` + origin LICENSE/README. OpenCV Farneback dense optical flow, onion-skin trail synthesis |
+| 17 | [bsisduck/video-analyzer-skill](https://github.com/bsisduck/video-analyzer-skill) | `1dd7e8172ba6ebb216e46df5cfdc3bdc10062600` | `upstream/video-analyzer-skill/` | Whole repo. Adaptive FPS tiering, scene cuts, audio transient peaks, parallel visual/motion/audio subagents |
+| 18 | [LottieFiles/motion-design-skill](https://github.com/LottieFiles/motion-design-skill) | `f9a8a041b85185ee4881b3471d3415e939aac772` | `upstream/motion-design-skill/` | Whole repo. Timing/easing lookup tables, displacement-to-Bezier fitting, multi-element stagger choreography |
+| 19 | [frankxai/awesome-motion-design-agent-skills](https://github.com/frankxai/awesome-motion-design-agent-skills) | `b45d60fa5b0f7b7d07331572416b80e17dcfd203` | `upstream/awesome-motion-design-agent-skills/` | Only the cited `skills/motion-director` and `skills/web-motion-auditor` (5-point motion quality gate) + origin README/LICENSE |
+
+New v2 script dependency: `opencv-python-headless` (added to `requirements.txt`).

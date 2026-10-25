@@ -1,6 +1,6 @@
 # BINARY_FILES — 未随 GitHub 上传的二进制文件
 
-以下 16 个文件是二进制媒体（演示 GIF/MP4、示例图、横幅图），GitHub 快照上传通道只接受 UTF-8 文本，故未包含在本仓库中。它们在上游仓库的对应路径下（commit 见 SOURCES.md），本地整合包中则都在原位。
+以下 17 个文件是二进制媒体（演示 GIF/MP4、示例图、横幅图），GitHub 快照上传通道只接受 UTF-8 文本，故未包含在本仓库中（第二版增补 1 个）。它们在上游仓库的对应路径下（commit 见 SOURCES.md），本地整合包中则都在原位。
 
 | 文件（仓库内相对路径） | 大小（字节） |
 |---|---|
@@ -19,3 +19,4 @@
 | `upstream/spine-animation-ai/examples/sombrero/skeleton.png` | 2439 |
 | `upstream/spine-animation-ai/examples/sombrero/sombrero.png` | 3815830 |
 | `upstream/superpowers/assets/antigravity-logo.png` | 16690 |
+| `upstream/web-motion-skill/assets/example-contact-sheet.png` | 88645 |

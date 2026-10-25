@@ -1,82 +1,104 @@
 ---
 name: gameplay-video-cloner
-description: Reverse-engineer and 1:1 replicate playable games directly from gameplay videos (看游戏视频直接复刻游戏), screen recordings, GIFs, or video URLs using a Lead-Agent + Parallel-Subagents Swarm workflow. Bundles 14 open-source repositories (40 files): multi-agent orchestration suites (obra/superpowers dispatching-parallel-agents & subagent-driven-development, kieranklaassen/orchestrating-swarms, sickn33/subagent-orchestrator, qodex-ai/multi-agent-orchestration, VoltAgent/awesome-claude-code-subagents), 2D/3D skeletal animation suites (GenielabsOpenSource/spine-animation-ai, BowTiedSwan/rive-skills, composio-community/opencode-skills blender-rigging-animation, arjun988/blender-skills), and game pipelines (ybuild-ai/ai-game-art-pipeline-skill, video-db/skills, PlayableIntelligence/game-creator, gamedev-skills/awesome-gamedev-agent-skills, Donchitos/Claude-Code-Game-Studios). Use whenever the user shares a gameplay video or asks to clone, replicate, rig, animate, or multi-agent build a 2D/3D game.
+description: Reverse-engineer and 1:1 replicate playable games directly from gameplay videos (看游戏视频直接复刻游戏及动作特效), screen recordings, GIFs, or video URLs using a Lead-Agent + Parallel-Subagents Swarm workflow. Bundles 19 open-source repositories (46 files): continuous video motion & VFX analysis suites (Schmandarine/web-motion-skill 60fps burst drill-down, alirezarezvani/senior-computer-vision OpenCV optical flow & stroboscopic onion-skin trails, bsisduck/video-analyzer-skill parallel video/audio subagents, LottieFiles/motion-design-skill & frankxai/awesome-motion-design-agent-skills easing/choreography), multi-agent orchestration suites (obra/superpowers, kieranklaassen/orchestrating-swarms, sickn33/subagent-orchestrator, qodex-ai, VoltAgent), 2D/3D skeletal animation suites (GenielabsOpenSource/spine-animation-ai, BowTiedSwan/rive-skills, blender-rigging-animation, arjun988/blender-skills), and game pipelines (ybuild-ai, video-db, PlayableIntelligence/game-creator, awesome-gamedev-agent-skills, Claude-Code-Game-Studios). Use whenever the user shares a gameplay video or asks to clone a game with accurate motion, physics, VFX, and animations.
 allowed-tools: default_api google youtube image_gen
 ---
-# Gameplay Video Cloner (14-Repository Multi-Agent Swarm, 2D/3D Skeletal & Game Engine Suite)
+# Gameplay Video Cloner (19-Repository Video Motion, Multi-Agent Swarm, 2D/3D Skeletal & Game Suite)
 
-Reverse-engineer gameplay videos, screen recordings, GIFs, or video URLs into playable 1:1 game replicas using a **Lead Orchestrator + Parallel Specialist Subagents Swarm** architecture. This skill packages **15 executable scripts** and **24 reference modules** (40 files total) across 14 open-source repositories:
+Reverse-engineer gameplay videos, screen recordings, GIFs, or video URLs into playable 1:1 game replicas without losing continuous motion trajectories, action frame timings, easing curves, or transient VFX effects. This skill packages **17 executable Python scripts** and **28 reference playbooks** (46 files total) across 19 open-source repositories.
 
-## 1. Bundled Open-Source Skill Repositories
+## How This Skill Solves the "Single Static Image Blindness" Problem
 
-### Part A: Multi-Agent Division-of-Labor & Swarm Orchestration (5 Repositories)
-1. **obra/superpowers (`dispatching-parallel-agents` & `subagent-driven-development`)**:
-   - Script & Reference: `scripts/orchestrate_subagents.py` + `references/multi-agent-orchestration/01-obra-superpowers-parallel-and-sdd.md` (isolated Context Briefs per subagent, zero context pollution, persistent `sdd_ledger.md` recovery ledger, and Two-Stage Review Gate: Spec Compliance + Code Quality).
-2. **kieranklaassen/orchestrating-swarms (Claude Code Swarm Orchestration)**:
-   - Script & Reference: `scripts/swarm_task_board.py` + `references/multi-agent-orchestration/02-swarm-teammate-and-dag-taskboard.md` (Leader + Teammates, 6 Swarm patterns, `blockedBy` DAG task queue with automatic downstream task unblocking, and JSON inbox messaging).
-3. **sickn33/antigravity-awesome-skills (`subagent-orchestrator`)**:
-   - Script & Reference: `scripts/merge_subagent_modules.py` + `references/multi-agent-orchestration/03-antigravity-subagent-orchestrator-6-phases.md` (6-Phase Mission Brief, Context Packet isolation, Round-by-Round parallel execution, 3-Point Spot Check for scope/contract/zero-TODOs, surgical single-agent repair, and final integration sweep).
-4. **qodex-ai/ai-agent-skills (`multi-agent-orchestration`) & VoltAgent/awesome-claude-code-subagents (100+ Subagents)**:
-   - Reference: `references/multi-agent-orchestration/04-qodex-voltagent-topologies-and-roles.md` (5 orchestration topologies, shared-memory `EventBus` contract table for the 5 Game-Cloner Specialist Subagents, and 3-Agent Consensus Balancing).
+Standard image-only skills fail on gameplay videos because a single screenshot cannot show movement arcs, speed easing, hit-stop freeze frames, screen shake, or particle burst timing. This skill solves that with a **4-Layer Video-to-Motion-Vision Pipeline**:
 
-### Part B: 2D & 3D Skeletal Animation Suites (4 Repositories)
-5. **GenielabsOpenSource/spine-animation-ai (Spine 4.2 2D Skeletal Auto-Rigging)**:
-   - Scripts & Reference: `scripts/position_parts.py`, `scripts/build_spine_json.py`, `scripts/make_atlas.py`, `scripts/generate_spine_player.py` + `references/skeletal-animation-2d-3d/01-spine-2d-skeletal-animation-ai.md` (16-bone humanoid hierarchy, 6 animation presets, and analytic 2-bone IK solver `solveTwoBoneIK`).
-6. **BowTiedSwan/rive-skills (Rive 2D Bones, Weighted Meshes, IK & State Machines)**:
-   - Reference: `references/skeletal-animation-2d-3d/02-rive-2d-bones-ik-state-machines.md`.
-7. **composio-community/opencode-skills (`blender-rigging-animation`) & arjun988/blender-skills (94 3D Skills)**:
-   - Reference: `references/skeletal-animation-2d-3d/03-blender-3d-rigging-and-animation.md` + `04-runtime-3d-skinnedmesh-ik-threejs-unity-godot.md` (`createProcedural3DRig` & `GlbAnimationController`).
+1. **Stroboscopic Onion-Skin Motion Trail Images (`extract_motion_trails_and_vfx.py` — `senior-computer-vision`)**:
+   - Bakes 8 consecutive high-FPS frames of each action window into **one single composite image** (`onion_skin_trail_01.png`) with decaying alpha ghosts (cyan = startup anticipation, gold = active trajectory arc, magenta = recovery) and **OpenCV Farneback Dense Optical Flow velocity arrows `(vx, vy)`**. Even when viewing a single image, the agent directly sees the exact jump parabola, sword swing arc, acceleration/deceleration spacing, and knockback vector.
+2. **Macro-to-Micro 30/60fps Action Window Drill-Down (`Schmandarine/web-motion-skill` + `bsisduck/video-analyzer-skill`)**:
+   - First builds a 16-tile macro `contact_sheet.png` across the whole video to spot action timestamps, then automatically zooms into the top motion peaks and extracts **consecutive 30fps/60fps burst strips** (`action_burst_strip_01.png`) labeled with millisecond deltas so startup, active, hit-stop, and recovery frame counts are visible frame-by-frame.
+3. **Automated Micro-VFX & Easing Telemetry (`vfx_timing_report.json` — `LottieFiles/motion-design-skill` + `frankxai`)**:
+   - Quantifies invisible-in-stills effects directly into JSON:
+     - **Camera Screen Shake**: Global background phase-correlation translation `(dx, dy)` in pixels and decay duration.
+     - **Hit-Stop Freeze Frames**: Sudden 1-to-5 frame velocity drops (`mean_delta < 1.5`) inside a high-motion combat window (`40ms-90ms`).
+     - **Hit-Flash & Burst VFX**: 1-to-3 frame localized luminance spikes (`+45` brightness jump) on impact.
+     - **Fitted Easing Curve**: Computes displacement ratios across consecutive frames to classify motion as `linear`, `easeInQuad` (gravity fall), `easeOutCubic` (dash deceleration), or `easeOutBack` (overshoot pop).
+4. **Audio Waveform SFX & Beat Correlation (`extract_audio_sfx_peaks.py` — `bsisduck/video-analyzer-skill`)**:
+   - Extracts audio RMS transient spikes (impacts, jumps, gunshots, merge pops) and correlates them with visual frame numbers.
 
-### Part C: Video Understanding, Art Pipeline & Cross-Engine Game Studios (5 Repositories)
-8. **ybuild-ai/ai-game-art-pipeline-skill**: 5 scripts (`extract_video_frames.py`, `sheet_contact.py`, `chroma_key_magenta.py`, `provider_stub.py`, `extract_sprites.py`) + 5 reference guides under `references/ybuild-art-pipeline/`.
-9. **video-db/skills**: `scripts/analyze_gameplay_video.py` + `references/videodb-workflows/video-scene-ocr-audio-indexing.md`.
-10. **PlayableIntelligence/game-creator**: `scripts/validate_architecture.py` + `references/playable-game-creator/11-skills-and-11-commands.md` (11 skills + 11 commands).
-11. **gamedev-skills/awesome-gamedev-agent-skills**: `scripts/detect_engine_router.py` + 6 catalog modules under `references/awesome-gamedev-74-skills/` (all 74 skills).
-12. **Donchitos/Claude-Code-Game-Studios**: 3 modules under `references/claude-code-game-studios/` (49 studio agents + 74 slash commands + 15 hooks + 14 path rules).
+## 1. Bundled Open-Source Skill Repositories (19 Repositories)
 
-## When to Use
+### Part A: Video Motion, Optical Flow, VFX & Easing Analysis (5 Repositories - NEW)
+1. **Schmandarine/web-motion-skill**: Macro 24-tile overview contact sheet -> Micro 25-60fps consecutive action burst strip drill-down + Disney 12 Principles of Web/Game Motion (`references/video-motion-and-vfx-analysis/01-schmandarine-web-motion-macro-micro-drilldown.md`).
+2. **alirezarezvani/claude-skills (`senior-computer-vision`)**: OpenCV Farneback dense optical flow, stroboscopic onion-skin trail synthesis, and motion vector arrows (`scripts/extract_motion_trails_and_vfx.py` + `02-opencv-optical-flow-and-onion-skin-trails.md`).
+3. **bsisduck/video-analyzer-skill**: Adaptive FPS tiering, scene-cut detection, audio transient peak extraction (`scripts/extract_audio_sfx_peaks.py`), and parallel visual/motion/audio subagents (`03-bsisduck-parallel-video-audio-subagents.md`).
+4. **LottieFiles/motion-design-skill & frankxai/awesome-motion-design-agent-skills**: Timing and easing lookup tables (`timing-easing-tables`), displacement-to-Bezier curve fitting, multi-element stagger choreography, and `web-motion-auditor` QA rubric (`04-lottiefiles-frankx-timing-easing-and-vfx-curves.md`).
 
-- The user shares a gameplay video, screen recording, GIF, or link and asks to clone, replicate, or rebuild the game.
-- The user wants a Lead Agent to coordinate multiple specialized Subagents in parallel (Telemetry Architect, Physics/AI Engineer, 2D/3D Skeletal Animator, HUD/Audio Designer, QA Verifier) to build, rig, or polish a game.
+### Part B: Multi-Agent Division-of-Labor & Swarm Orchestration (5 Repositories)
+5. **obra/superpowers (`dispatching-parallel-agents` & `subagent-driven-development`)**: `scripts/orchestrate_subagents.py` + `references/multi-agent-orchestration/01-obra-superpowers-parallel-and-sdd.md`.
+6. **kieranklaassen/orchestrating-swarms**: `scripts/swarm_task_board.py` + `02-swarm-teammate-and-dag-taskboard.md`.
+7. **sickn33/antigravity-awesome-skills (`subagent-orchestrator`)**: `scripts/merge_subagent_modules.py` + `03-antigravity-subagent-orchestrator-6-phases.md`.
+8. **qodex-ai/ai-agent-skills & VoltAgent/awesome-claude-code-subagents**: `04-qodex-voltagent-topologies-and-roles.md`.
+
+### Part C: 2D & 3D Skeletal Animation Suites (4 Repositories)
+9. **GenielabsOpenSource/spine-animation-ai**: `scripts/position_parts.py`, `scripts/build_spine_json.py`, `scripts/make_atlas.py`, `scripts/generate_spine_player.py` + `references/skeletal-animation-2d-3d/01-spine-2d-skeletal-animation-ai.md`.
+10. **BowTiedSwan/rive-skills**: `02-rive-2d-bones-ik-state-machines.md`.
+11. **composio-community/opencode-skills (`blender-rigging-animation`) & arjun988/blender-skills**: `03-blender-3d-rigging-and-animation.md` + `04-runtime-3d-skinnedmesh-ik-threejs-unity-godot.md`.
+
+### Part D: Game Art Pipeline, VideoDB & Cross-Engine Game Studios (5 Repositories)
+12. **ybuild-ai/ai-game-art-pipeline-skill**: `extract_video_frames.py`, `sheet_contact.py`, `chroma_key_magenta.py`, `provider_stub.py`, `extract_sprites.py` + 5 art guides under `references/ybuild-art-pipeline/`.
+13. **video-db/skills**: `scripts/analyze_gameplay_video.py` + `references/videodb-workflows/video-scene-ocr-audio-indexing.md`.
+14. **PlayableIntelligence/game-creator**: `scripts/validate_architecture.py` + `references/playable-game-creator/11-skills-and-11-commands.md`.
+15. **gamedev-skills/awesome-gamedev-agent-skills**: `scripts/detect_engine_router.py` + 6 modules under `references/awesome-gamedev-74-skills/` (all 74 skills).
+16. **Donchitos/Claude-Code-Game-Studios**: 3 modules under `references/claude-code-game-studios/` (49 agents + 74 skills + 15 hooks + 14 rules).
 
 ## Steps
 
-### 1. Round 1 (Foundation): Video Telemetry, Engine Routing & Multi-Agent Mission Brief
+### 1. Round 1 (Foundation): Macro Telemetry + Micro High-FPS Burst Strips + Onion-Skin Optical Flow
 
-Run the parallel discovery and mission-decomposition scripts:
+Run the video motion & VFX analysis suite via `execute_bash` before writing any code:
 
 ```bash
-# 1) Extract video keyframes, contact sheet, HUD variance map, scene cuts & dominant hex palette
+# 1) Macro timeline analysis: 16 keyframes, contact sheet, HUD variance map, scene cuts & hex palette
 python3 skills/gameplay-video-cloner/scripts/analyze_gameplay_video.py <video_path> ./video_analysis --frames 16
 
-# 2) Route engine, 2D/3D skeletal suite, genre & multi-agent swarm configuration
-python3 skills/gameplay-video-cloner/scripts/detect_engine_router.py --workspace . --prompt "<user_request_summary>"
+# 2) Micro 30fps Action Burst Strips + Stroboscopic Onion-Skin Motion Trails + Optical Flow + VFX Telemetry
+python3 skills/gameplay-video-cloner/scripts/extract_motion_trails_and_vfx.py <video_path> ./video_analysis/motion_vfx --top-peaks 3 --fps 30
 
-# 3) Initialize the 5-Subagent Mission Brief, isolated Context Packets, SDD Ledger & DAG Task Board
+# 3) Audio waveform transient SFX & impact beat synchronization
+python3 skills/gameplay-video-cloner/scripts/extract_audio_sfx_peaks.py <video_path> ./video_analysis/audio_peaks.json
+
+# 4) Route engine, 2D/3D skeletal suite & initialize 5-Subagent Swarm Board
+python3 skills/gameplay-video-cloner/scripts/detect_engine_router.py --workspace . --prompt "<user_request_summary>"
 python3 skills/gameplay-video-cloner/scripts/orchestrate_subagents.py --project-dir ./subagent_workspace --game-title "<game_title>"
 python3 skills/gameplay-video-cloner/scripts/swarm_task_board.py --board ./subagent_workspace/swarm_board.json init
 ```
 
+- **Inspect Both Macro and Motion-Trail Visuals**: Call `view_file` in parallel on:
+  - `./video_analysis/contact_sheet.png` (overall state flow & UI layout)
+  - `./video_analysis/motion_vfx/action_burst_strip_01.png` (frame-by-frame 30fps action sequence)
+  - `./video_analysis/motion_vfx/onion_skin_trail_01.png` (single-image stroboscopic motion trajectory + optical flow arrows)
+  - `./video_analysis/motion_vfx/vfx_timing_report.json` (quantified screen shake, hit-stop frames, hit-flash spikes, and fitted easing curves)
+
 ### 2. Round 2 (Parallel Specialist Fan-Out): Execute Isolated Domain Subagents
 
 - **`subagent-02-physics-controller` (`PhysicsSystem` + `PlayerController` + `WaveDirector`)**:
-  - Implement delta-time normalized movement (`dt`), coyote time/jump buffer or pointer drag lerp, sub-stepped circle/AABB collision detection, and enemy steering/wave spawning. Emit `on_hit`, `on_merge`, `on_pickup`, `on_land`, `on_death` via `EventBus`.
+  - Implement exact velocity, gravity, and fitted easing curves from `vfx_timing_report.json` with delta-time normalization (`dt`).
 - **`subagent-03-skeletal-art` (`SkeletalRig` + `solveTwoBoneIK` + `Juice` + `ParticleSystem`)**:
-  - For 2D games, run `position_parts.py` + `build_spine_json.py` or build a Canvas 2D hierarchical bone rig (`root -> hip -> torso -> head / arms / legs`) with cubic bezier `[0.25, 0, 0.75, 1]` interpolation, `0.1s` head/cape follow-through, and analytic 2-bone IK (`solveTwoBoneIK`).
-  - For 3D games, use `createProcedural3DRig` or `GlbAnimationController` (`THREE.AnimationMixer` crossfades).
-  - Attach 3-tier `Juice.feedback(x, y, 'small'|'medium'|'large')` with decaying `trauma^2` camera offset shake, real-time unscaled `hit_stop`, and `easeOutBack` squash-and-stretch.
+  - Replicate the exact startup/active/recovery frame counts and motion arcs visible in `action_burst_strip_01.png` and `onion_skin_trail_01.png` using 2D Spine/Rive bones (`solveTwoBoneIK`) or 3D articulated joints (`createProcedural3DRig`).
+  - Configure `Juice.feedback()` with the exact `hit_stop_ms`, `camera_shake_px`, `hit_flash_ms`, and particle burst vectors measured in `vfx_timing_report.json`.
 - **`subagent-04-hud-audio` (`HUDRenderer` + `AudioSynth` + `TuningDrawer`)**:
-  - Render score/health/XP bars inside the static HUD safe-zones detected in `telemetry.json`, add floating damage/score numbers, build the collapsible `⚙️ 参数微调` live tuning drawer, and wire procedural Web Audio synthesizer SFX/BGM to `EventBus`.
+  - Build HUD elements inside the static HUD zones, wire Web Audio synth SFX to match `audio_peaks.json`, and include the `⚙️ 参数微调` live tuning drawer.
 
-### 3. Round 3 (Fan-In Review & Assembly): 3-Point Spot Check, QA Gate & Delivery
+### 3. Round 3 (Fan-In Review & Assembly): 3-Point Spot Check, QA Gate & Canvas Delivery
 
 ```bash
-python3 skills/gameplay-video-cloner/scripts/merge_subagent_modules.py <output_html>
-python3 skills/gameplay-video-cloner/scripts/validate_architecture.py <output_html>
+python3 skills/gameplay-video-cloner/scripts/merge_subagent_modules.py /working_dir/<conversation_id>/artifacts/file_generation/ttl=63d/output/<game_name>.html
+python3 skills/gameplay-video-cloner/scripts/validate_architecture.py /working_dir/<conversation_id>/artifacts/file_generation/ttl=63d/output/<game_name>.html
 ```
+
+- Call `google:show_file` on the verified game file and present the **Motion & VFX Telemetry Table**, **Multi-Agent Division-of-Labor Table**, and **Video-to-Game Replication Matrix**.
 
 ## Gotchas
 
-- **Dumping Full Session History into Subagents**: Always isolate each subagent to its `AGENT CONTEXT PACKET` and shared `EventBus` contract (`obra/superpowers` rule).
-- **Skipping the 3-Point Spot Check Between Rounds**: Never merge a subagent module that contains `TODO` placeholders or mutates another subagent's private state directly instead of emitting `EventBus` events.
-- **Shaking Physics Coordinates**: Apply `trauma^2` camera shake strictly to the visual render transform (`ctx.translate`), never to physics collision bodies.
+- **Relying Only on 1fps Sparse Keyframes**: Fast attacks (`0.25s`), hit-stop freezes (`0.06s`), and hit-flashes (`0.05s`) vanish between 1fps keyframes. Always inspect `action_burst_strip_01.png` (30fps) and `onion_skin_trail_01.png` so fast motion and transient VFX are captured.
+- **Linear Motion Instead of Fitted Easing**: Never move UI popups, knockbacks, or jumps with constant linear speed when `vfx_timing_report.json` shows `easeOutBack` or parabolic gravity acceleration.
+- **Shaking Physics Coordinates**: Apply `trauma^2` camera shake strictly to `ctx.translate`, never to entity collision coordinates.

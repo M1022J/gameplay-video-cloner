@@ -1,4 +1,4 @@
-# 04 · Scripts Reference (skill/scripts/, 15 scripts)
+# 04 · Scripts Reference (skill/scripts/, 17 scripts)
 
 ## Video analysis
 | Script | Purpose | Basic usage |
@@ -27,5 +27,13 @@
 | `merge_subagent_modules.py` | 3-point spot check: files exist, zero TODO/FIXME/placeholders | `merge_subagent_modules.py <file...>` |
 | `validate_architecture.py` | 8-gate architecture validation of a finished game (Constants/reset/rAF/dt/dual input/shake/audio/render_game_to_text) | `validate_architecture.py <game.html>` |
 
+## Video motion & VFX (v2 additions, require opencv)
+| Script | Purpose | Basic usage |
+|---|---|---|
+| `extract_motion_trails_and_vfx.py` | High-FPS burst strips + optical-flow onion-skin trails + VFX timing JSON (shake / hit-stop / flash / easing fit) | `extract_motion_trails_and_vfx.py <video> <out_dir> [--top-peaks N --fps N]` |
+| `extract_audio_sfx_peaks.py` | 50ms RMS audio peaks → aligned SFX events (audio_peaks.json) | `extract_audio_sfx_peaks.py <video> <out.json>` |
+
+See `docs/en/07-video-motion-and-vfx.md`.
+
 Note: Section 7 of `HANDBOOK.md` embeds full-length versions of these scripts (minor
-detail differences vs. the zip versions) — the two copies are worth cross-reading.
+detail differences vs. the zip versions) — the two copies are worth cross-reading. The v2 handbook is `HANDBOOK-v2.md`.

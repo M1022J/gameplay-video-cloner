@@ -25,3 +25,18 @@
 - Python 3 + `Pillow`、`numpy`（见 `requirements.txt`）
 - 系统工具 `ffmpeg` / `ffprobe`（视频抽帧与遥测脚本必需）
 - Node.js（部分上游 skill 的可选工具链，非本 skill 脚本必需）
+
+## 第二版增补（2026-10-25，视频运动与特效分析）
+
+来源：用户在 Gemini 对话中为解决「只能看单张静态图、看不出连续动作与打击特效」追加的 5 个仓库；
+新版包（46 文件：SKILL.md 更新 + 新脚本 2 + 新参考 4）与新版手册已一并整合（`HANDBOOK-v2.md`）。
+
+| # | 来源（GitHub） | Commit | 整合位置 | 收录范围与说明 |
+|---|---|---|---|---|
+| 15 | [Schmandarine/web-motion-skill](https://github.com/Schmandarine/web-motion-skill) | `74b7359277140f518cd33be224e6f86c158b629a` | `upstream/web-motion-skill/` | 全仓。宏观（16/24 格接触表）→微观（30/60fps 连续动作条）下钻 + 迪士尼运动 12 原则 |
+| 16 | [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | `6d2f02ea077eead1bee5411a31bcc6db5a11a70c` | `upstream/senior-computer-vision/` | 大仓，仅收录 `engineering-team/skills/senior-computer-vision/` + 原仓 LICENSE/README。OpenCV Farneback 稠密光流、洋葱皮轨迹合成 |
+| 17 | [bsisduck/video-analyzer-skill](https://github.com/bsisduck/video-analyzer-skill) | `1dd7e8172ba6ebb216e46df5cfdc3bdc10062600` | `upstream/video-analyzer-skill/` | 全仓。自适应 FPS 分档、场景切分、音频瞬态峰值、视觉/运动/音频并行子 Agent |
+| 18 | [LottieFiles/motion-design-skill](https://github.com/LottieFiles/motion-design-skill) | `f9a8a041b85185ee4881b3471d3415e939aac772` | `upstream/motion-design-skill/` | 全仓。时序/缓动查表、位移→贝塞尔曲线拟合、多元素 stagger 编排 |
+| 19 | [frankxai/awesome-motion-design-agent-skills](https://github.com/frankxai/awesome-motion-design-agent-skills) | `b45d60fa5b0f7b7d07331572416b80e17dcfd203` | `upstream/awesome-motion-design-agent-skills/` | 仅收录所引用的 `skills/motion-director` 与 `skills/web-motion-auditor`（5 点运动质量门禁）+ 原仓 README/LICENSE |
+
+第二版新增脚本依赖：`opencv-python-headless`（已加入 `requirements.txt`）。
