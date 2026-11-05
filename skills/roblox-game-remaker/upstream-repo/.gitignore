@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.rbxl
+*.rbxlx
+*.rbxm
+roblox.yml
+sourcemap.json
+remake/media/
+remake/frames/
+remake/captures/
+.DS_Store
+skills/roblox-game-remaker/evals/files/

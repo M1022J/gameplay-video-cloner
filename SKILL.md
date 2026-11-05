@@ -73,3 +73,7 @@ python3 skills/gameplay-video-cloner/scripts/process_and_audit_sprites.py audit 
 python3 skills/gameplay-video-cloner/scripts/validate_architecture.py <built_game.html>
 python3 skills/gameplay-video-cloner/scripts/visual_verdict_diff_loop.py <keyframe_or_screenshot.png> <built_game.html> ./verdict_out
 ```
+
+## 4. Companion Skill — Roblox Game Remaker (`skills/roblox-game-remaker/`)
+
+Fully integrated 2026-11-06 (upstream `InfiniteMindData/Roblox-Game-Remaker` @ `fa5213d`, MIT, content unmodified; repo extras under its `upstream-repo/`, provenance in `SOURCES.md` #42, mapping in its `INTEGRATION.md`). A gated remake workflow — research → frame-by-frame measurement → evidence-backed breakdown → build → measured compare/fix loop — with 24 tested Python scripts and 16 references. It complements the core suite where the core is thin: **measured physics fits** (`motion_track.py` + `remake_calc.py`: jump gravity, acceleration, springs, FOV/unit conversion from footage) and **metric visual diffing** (`visual_compare.py`: SSIM / CIEDE2000 / Lab shift / edge IoU) alongside the 6D verdict gate. Its Roblox-Studio-specific parts (translation reference, Rojo template, Studio MCP, Quest VR) apply only when the remake target is Roblox; for other engines (e.g. TapTap Maker Lua/UrhoX) use its measurement and verification layers and translate by the target engine's own conventions.

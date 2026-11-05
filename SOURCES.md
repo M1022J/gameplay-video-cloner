@@ -79,3 +79,11 @@ SKILL.md 更新 + 新脚本 3 + 新参考 4）与新版手册已一并整合（`
 | 39 | [Intense-Visions/harness-engineering](https://github.com/Intense-Visions/harness-engineering) | `b691642acbe66968c571c93675318841287b7b9f` | `upstream/harness-engineering/` | 摘录：根文档 + docs（未收 changes/ 变更档案 28M）+ templates/examples/fixtures/.claude-plugin（未收 agents/ 多平台镜像与 packages/ 产品源码）。视觉回归 harness 来源 |
 | 40 | [vibeeval/vibecosystem](https://github.com/vibeeval/vibecosystem) | `3b763b1fb288f57bfa3cce76ef18184b96461a78` | `upstream/vibecosystem/` | 全仓。visual-verdict 6 维打分（≥90 门禁）来源 |
 | 41 | [uxkin/agent](https://github.com/uxkin/agent) | `6bb351e95de5ddce79bb6bbc5ccd4631eee49eb9` | `upstream/uxkin-agent/` | 全仓。ui-from-screenshot（SAHI 象限切片）来源 |
+
+## 2026-11-06 增补（Roblox Game Remaker 全量融入）
+
+用户指令将 Roblox-Game-Remaker 全部融入本仓：skill 本体收于 `skills/roblox-game-remaker/`，上游仓库其余文件（根文档、docs、tests、tools、插件清单等）收于 `skills/roblox-game-remaker/upstream-repo/`，上游内容未做改写；融入说明见 `skills/roblox-game-remaker/INTEGRATION.md`。
+
+| # | 来源（GitHub） | Commit | 整合位置 | 收录范围与说明 |
+|---|---|---|---|---|
+| 42 | [InfiniteMindData/Roblox-Game-Remaker](https://github.com/InfiniteMindData/Roblox-Game-Remaker) | `fa5213de5852a7ed23473240ad1e381f9d7d7f0a` | `skills/roblox-game-remaker/`（仓库其余文件在其 `upstream-repo/`） | 全仓（125 文件）。许可证：MIT。闸门式复刻流程（研究→逐帧测量→证据化拆解→建造→测量比对修复）+ 24 个实测脚本（motion_track 跳跃重力拟合、visual_compare SSIM/色差等）+ 16 篇参考；Roblox 专属部分（翻译层/Rojo 模板/Studio MCP/VR）仅目标为 Roblox 时用，测量与验证层与引擎无关 |
