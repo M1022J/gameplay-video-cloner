@@ -93,3 +93,13 @@ SKILL.md 更新 + 新脚本 3 + 新参考 4）与新版手册已一并整合（`
 | # | 来源 | 日期 | 整合位置 | 收录范围与说明 |
 |---|---|---|---|---|
 | 43 | 本仓自研（《变废为宝》UI 重构复盘蒸馏，用户 2026-11-07 令沉淀为技能并融入本仓） | 2026-11-07 | `skills/game-render-to-blueprint/` | 效果图即施工图方法：逐元素量测原图坐标→参考坐标系绝对摆位+整幅等比缩放；组件离线预成型（三态齐全、运行时不做九宫格）；内缩取量测值；旧裁决与原图冲突先上报；无专属图的页面标「风格推及」；对图逐元素验收。源于远端实现（reference_view 坐标摆位）一次对齐、而流式布局追赶五轮未收敛的对照教训 |
+
+## 2026-11-07 增补二（game-render-to-blueprint 融合三项外部方法）
+
+用户提供清单并令「把这几个也融进去」：以下三项的方法已转述融合进 `skills/game-render-to-blueprint/SKILL.md`（分块还原 / 层级树拆解 / 反廉价感约束三节），只吸收方法、未搬运代码与原文。
+
+| # | 来源（GitHub） | 许可证（2026-11-07 API 核实） | 融合位置 | 收录范围与说明 |
+|---|---|---|---|---|
+| 44 | [abi/screenshot-to-code](https://github.com/abi/screenshot-to-code) | MIT | `skills/game-render-to-blueprint/`（融合方法一） | 截图/效果图转前端代码工具（81k star）；吸收其分块还原与「生成→截图→对照→修块」迭代收敛策略、原图素材优先提取复用 |
+| 45 | [NoviScl/Design2Code](https://github.com/NoviScl/Design2Code)（斯坦福 SALT-Lab，论文 arXiv:2403.03163）+ [YaoMarkMu/UI2Code](https://github.com/YaoMarkMu/UI2Code) | Design2Code 为 MIT；UI2Code 仓库 API 未返回许可证信息（待核） | `skills/game-render-to-blueprint/`（融合方法二） | 吸收节点层级树拆解（容器嵌套/对齐约束/层叠）、文字先行提取、块级四维评测（块匹配/文字/位置/颜色）驱动的自修正回路 |
+| 46 | [anthropics/skills · frontend-design](https://github.com/anthropics/skills/tree/main/skills/frontend-design)（Anthropic 官方技能，其目录自带 LICENSE.txt）；索引：[travisvn/awesome-claude-skills](https://github.com/travisvn/awesome-claude-skills)、[hesreallyhim/awesome-claude-code](https://github.com/hesreallyhim/awesome-claude-code) | 见其目录 LICENSE.txt；合集为索引引用 | `skills/game-render-to-blueprint/`（融合方法三） | 吸收「AI 默认脸」清单（奶油底+衬线+陶土、近黑+酸绿、报纸细线、SaaS 卡片套件、模板眉题/中点串/箭头尾巴等）与克制原则，适配到风格推及页与文案；有定版效果图时效果图优先于本节 |
