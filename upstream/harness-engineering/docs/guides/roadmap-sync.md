@@ -1,0 +1,603 @@
+# Roadmap Guide
+
+The harness roadmap system tracks project features across milestones in a single markdown file (`docs/roadmap.md`), with optional bidirectional sync to GitHub Issues and AI-assisted next-item selection.
+
+> **Sharded storage:** new projects store the roadmap as per-row shards under `docs/roadmap.d/` (with `docs/roadmap.md` as a generated aggregate) rather than one monolith file. See [`roadmap-sharding.md`](roadmap-sharding.md) for adoption, git mechanics, and the read-source invariant. Everything in this guide applies to both layouts — tools read and write through the same roadmap store.
+
+## The Roadmap File
+
+### Creating a Roadmap
+
+```
+/harness:roadmap --create
+```
+
+This creates `docs/roadmap.md` with frontmatter and your first milestone. You can also create it manually.
+
+### Structure
+
+A roadmap file has three sections: **frontmatter**, **milestones with features**, and an optional **assignment history**.
+
+```markdown
+---
+project: my-project
+version: 1
+created: 2026-04-01
+updated: 2026-04-03
+last_synced: 2026-04-03T10:00:00Z
+last_manual_edit: 2026-04-02
+---
+
+# Roadmap
+
+## v1.0 MVP
+
+### Authentication
+
+- **Status:** done
+- **Spec:** docs/changes/auth/proposal.md
+- **Summary:** User authentication with OAuth2
+- **Blockers:** none
+- **Plan:** docs/changes/auth/plans/2026-03-15-auth-plan.md
+
+### API Gateway
+
+- **Status:** in-progress
+- **Spec:** docs/changes/api-gateway/proposal.md
+- **Summary:** REST API with rate limiting and versioning
+- **Blockers:** none
+- **Plan:** docs/changes/api-gateway/plans/2026-04-01-api-gateway-plan.md
+- **Assignee:** @alice
+- **Priority:** P0
+- **External-ID:** github:myorg/myproject#12
+
+### Dashboard UI
+
+- **Status:** planned
+- **Spec:** —
+- **Summary:** Admin dashboard for monitoring
+- **Blockers:** API Gateway
+
+## Backlog
+
+### Mobile App
+
+- **Status:** backlog
+- **Spec:** —
+- **Summary:** iOS and Android companion app
+- **Blockers:** —
+
+## Assignment History
+
+- **Feature:** Authentication
+- **Assignee:** @alice
+- **Action:** assigned
+- **Date:** 2026-03-15
+
+- **Feature:** Authentication
+- **Assignee:** @alice
+- **Action:** completed
+- **Date:** 2026-03-28
+
+- **Feature:** API Gateway
+- **Assignee:** @alice
+- **Action:** assigned
+- **Date:** 2026-04-01
+```
+
+### Feature Fields
+
+Every feature under a milestone heading (`### Feature Name`) has these fields:
+
+| Field         | Required | Description                                                              |
+| ------------- | -------- | ------------------------------------------------------------------------ |
+| `Status`      | Yes      | One of: `backlog`, `planned`, `in-progress`, `done`, `blocked`           |
+| `Spec`        | Yes      | Path to the proposal spec, or `—` if none exists                         |
+| `Summary`     | Yes      | One-line description of the feature                                      |
+| `Blockers`    | Yes      | Comma-separated list of feature names this depends on, or `none`/`—`     |
+| `Plan`        | No       | Path to the implementation plan                                          |
+| `Assignee`    | No       | Who is working on this (GitHub username, email, or name)                 |
+| `Priority`    | No       | Override: `P0`, `P1`, `P2`, `P3`. Replaces position as primary sort key. |
+| `External-ID` | No       | Auto-populated by sync. Format: `github:owner/repo#42`.                  |
+
+The `Assignee`, `Priority`, and `External-ID` fields are conditionally emitted — if none are set on any feature, the output is identical to a legacy roadmap with no diff noise.
+
+### Feature Statuses
+
+| Status        | Meaning                                |
+| ------------- | -------------------------------------- |
+| `backlog`     | Identified but not yet planned         |
+| `planned`     | Has a spec and/or plan, ready to start |
+| `in-progress` | Actively being worked on               |
+| `done`        | Completed                              |
+| `blocked`     | Cannot proceed — waiting on blockers   |
+
+Status progression follows a directional rule: `backlog` → `planned` → `in-progress` → `done`. The sync system enforces this — status can only advance forward, never regress, unless explicitly forced.
+
+### Milestones
+
+Features are grouped under H2 milestone headings (`## v1.0 MVP`). The special `## Backlog` milestone holds items not yet assigned to a release. Features are ordered by priority within each milestone — earlier position = higher priority (unless an explicit `Priority` field overrides this).
+
+## Managing the Roadmap
+
+### Via Slash Command
+
+```
+/harness:roadmap --show              # Display current roadmap
+/harness:roadmap --add               # Add a feature interactively
+/harness:roadmap --sync              # Sync roadmap with project state
+/harness:roadmap --edit              # Edit a feature's fields
+/harness:roadmap --query status=blocked  # Query features by field
+```
+
+### Via MCP Tool
+
+The `manage_roadmap` MCP tool provides programmatic access:
+
+| Action   | Description                                              |
+| -------- | -------------------------------------------------------- |
+| `show`   | Display the full roadmap or a filtered view              |
+| `add`    | Add a new feature to a milestone                         |
+| `update` | Update a feature's fields (status, spec, assignee, etc.) |
+| `remove` | Remove a feature                                         |
+| `query`  | Query features by status, milestone, or other fields     |
+| `sync`   | Trigger local + external sync                            |
+
+### Local Sync
+
+Local sync (`syncRoadmap`) scans your project's execution state — specs, plans, and session files — and proposes status changes. For example, if a spec exists for a `backlog` feature, sync proposes advancing it to `planned`. If all tasks in the plan are complete, sync proposes `done`.
+
+The **human-always-wins rule** applies: manually edited statuses are never overwritten unless `force_sync` is set. This prevents the system from fighting human judgment.
+
+Local sync fires automatically after every state transition via `autoSyncRoadmap`.
+
+## External Tracker Sync (GitHub Issues)
+
+### Prerequisites
+
+- A GitHub repository with Issues enabled
+- A `GITHUB_TOKEN` environment variable with `repo` scope
+- Tracker configuration in `harness.config.json`
+
+### Configuring GitHub Issues Sync
+
+Add a `roadmap.tracker` section to your `harness.config.json`:
+
+```json
+{
+  "version": 1,
+  "name": "my-project",
+  "roadmap": {
+    "tracker": {
+      "kind": "github",
+      "repo": "owner/repo",
+      "labels": ["harness-managed"],
+      "statusMap": {
+        "backlog": "open",
+        "planned": "open",
+        "in-progress": "open",
+        "done": "closed",
+        "blocked": "open"
+      },
+      "reverseStatusMap": {
+        "closed": "done",
+        "open:in-progress": "in-progress",
+        "open:blocked": "blocked",
+        "open:planned": "planned"
+      }
+    }
+  }
+}
+```
+
+### Configuration Fields
+
+| Field              | Required | Description                                                                                 |
+| ------------------ | -------- | ------------------------------------------------------------------------------------------- |
+| `kind`             | Yes      | Tracker type. Currently only `"github"` is supported.                                       |
+| `repo`             | No       | Repository in `"owner/repo"` format. Defaults to your git remote.                           |
+| `labels`           | No       | Labels auto-applied to every synced issue. Use for filtering (e.g., `["harness-managed"]`). |
+| `statusMap`        | Yes      | Maps each roadmap status to a GitHub issue state (`"open"` or `"closed"`).                  |
+| `reverseStatusMap` | No       | Maps GitHub state (+ optional label) back to a roadmap status.                              |
+
+### How Status Mapping Works
+
+GitHub Issues only have two states: `open` and `closed`. Since multiple roadmap statuses map to `open`, the adapter uses **labels** as a secondary discriminator:
+
+**Push (roadmap → GitHub):**
+
+| Roadmap Status | GitHub State | Label Added   |
+| -------------- | ------------ | ------------- |
+| `backlog`      | open         | _(none)_      |
+| `planned`      | open         | `planned`     |
+| `in-progress`  | open         | `in-progress` |
+| `blocked`      | open         | `blocked`     |
+| `done`         | closed       | _(none)_      |
+
+**Pull (GitHub → roadmap):**
+
+| GitHub State | Label                | Roadmap Status       |
+| ------------ | -------------------- | -------------------- |
+| `closed`     | _(any)_              | `done`               |
+| `open`       | `in-progress`        | `in-progress`        |
+| `open`       | `blocked`            | `blocked`            |
+| `open`       | `planned`            | `planned`            |
+| `open`       | _(none or multiple)_ | _(preserve current)_ |
+
+The `reverseStatusMap` uses compound keys like `"open:in-progress"` to express state + label combinations.
+
+### Setting Up the Token
+
+The adapter reads `GITHUB_TOKEN` from your environment. If the token is absent, external sync is silently skipped.
+
+#### Required Permissions
+
+The token needs read/write access to issues and labels. The exact scopes depend on whether you use a classic token or a fine-grained token.
+
+**Classic personal access token:**
+
+| Scope  | Why                                            |
+| ------ | ---------------------------------------------- |
+| `repo` | Read/write access to issues, labels, and state |
+
+For public-only repos, `public_repo` is sufficient instead of `repo`.
+
+**Fine-grained personal access token (recommended):**
+
+| Permission | Access     | Why                                     |
+| ---------- | ---------- | --------------------------------------- |
+| `Issues`   | Read/Write | Create, update, and close synced issues |
+| `Metadata` | Read       | Required for all fine-grained tokens    |
+
+Set **Repository access** to "Only select repositories" and choose the repo(s) your roadmap syncs with.
+
+#### Creating a Token for Personal Repos
+
+1. Go to **Settings → Developer settings → Personal access tokens**
+2. Choose **Fine-grained tokens** (or **Tokens (classic)** for a classic token)
+3. Click **Generate new token**
+4. For fine-grained tokens:
+   - Set a descriptive name (e.g., `harness-roadmap-sync`)
+   - Set an expiration
+   - Under **Repository access**, select "Only select repositories" and pick your repo
+   - Under **Permissions → Repository permissions**, grant `Issues: Read and write` and `Metadata: Read`
+5. For classic tokens:
+   - Set a descriptive name and expiration
+   - Check the `repo` scope (or `public_repo` for public repos only)
+6. Click **Generate token** and copy the value
+
+#### Creating a Token for Organization Repos
+
+Organization repos may require additional steps depending on the org's security policies.
+
+1. **Check org token policy** — Org admins can restrict which token types are allowed under **Organization settings → Personal access tokens**. Some orgs require fine-grained tokens; others block them entirely. Confirm with your admin if unsure.
+2. **Create the token** — Follow the same steps as for personal repos above, selecting the org repo under repository access.
+3. **Authorize for SSO (classic tokens only)** — If the org uses SAML SSO, you must authorize the token after creation:
+   - Go to **Settings → Developer settings → Personal access tokens → Tokens (classic)**
+   - Find your token and click **Configure SSO**
+   - Click **Authorize** next to the organization name
+4. **Request admin approval (fine-grained tokens)** — If the org requires approval for fine-grained tokens, your token will be in a "pending" state after creation. An org admin must approve it before it will work.
+
+#### Providing the Token
+
+```bash
+# Option 1: Export in your shell profile
+export GITHUB_TOKEN=ghp_your_token_here
+
+# Option 2: Add to .env (already in .gitignore)
+echo "GITHUB_TOKEN=ghp_your_token_here" >> .env
+```
+
+> **Tip:** If you use the GitHub CLI (`gh`), you can reuse its token: `export GITHUB_TOKEN=$(gh auth token)`
+
+## How Sync Works
+
+### Automatic Sync
+
+Once configured, sync fires automatically whenever a state transition occurs:
+
+1. **Local sync runs first** — updates roadmap status based on local execution state (specs, plans, sessions)
+2. **External sync runs second** — pushes planning fields, then pulls execution fields
+3. **Errors are logged but never block** — the state operation always succeeds
+
+The 6 trigger points are: `task-start`, `task-complete`, `phase-start`, `phase-complete`, `save-handoff`, `archive_session`.
+
+### What Gets Synced
+
+**Push (every sync):**
+
+- Features without an `External-ID` get a new GitHub Issue created (title = feature name, body = summary + spec link)
+- Features with an `External-ID` get their planning fields updated (title, body, labels)
+- The resulting `External-ID` (e.g., `github:owner/repo#42`) is stored on the feature
+
+**Pull (every sync):**
+
+- Assignee changes from GitHub overwrite local assignee (external wins)
+- Status changes are applied with a **directional guard** — status can only advance forward (`planned` → `in-progress` → `done`), never regress, unless `forceSync` is set
+- If status is ambiguous (multiple status labels or no label), the current roadmap status is preserved
+
+### Concurrency Protection
+
+An in-process mutex serializes `fullSync` calls. With 6 trigger points, rapid state transitions could otherwise produce write conflicts. The mutex ensures only one write to `roadmap.md` occurs at a time.
+
+## Running Sync from the CLI (`harness roadmap sync`)
+
+The full bidirectional sync is also a CLI command, so CI can close the loop without a human running the `manage_roadmap` MCP tool:
+
+```bash
+# Report every intended change, write nothing (the default).
+harness roadmap sync
+
+# Converge labels safely — the recommended unattended mode.
+harness roadmap sync --apply --no-create --no-state-change
+```
+
+### Why this exists
+
+`harness roadmap reconcile` can only ever flip rows **to `done`**. Every other transition — and the whole tracker-label push — used to depend on someone remembering to invoke an MCP tool. When they didn't, the drift was invisible: in one downstream repo `last_synced` fell 22 days behind `last_manual_edit` and 22 issues carried no tracker labels at all, which meant a tracker scoped by a selector label could not see them.
+
+### Flags
+
+| Flag                | Effect                                                                                                                                         |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| _(none)_            | **Dry run.** Computes and reports every intended change; issues zero write requests — no ticket create, no ticket patch, no roadmap writeback. |
+| `--apply`           | Actually write. Required for any change to land.                                                                                               |
+| `--no-create`       | Never create a ticket for a row lacking an `External-ID`; report each skipped row instead.                                                     |
+| `--no-state-change` | **CI-safe mode.** Never patch an issue's open/closed state — labels converge, but no issue can be closed or reopened.                          |
+| `--force`           | Allow status regressions (`done` → `in-progress`). Overrides the human-always-wins rule.                                                       |
+| `--json`            | Emit the machine-readable report instead of prose.                                                                                             |
+| `--cwd <dir>`       | Project root (defaults to the current working directory).                                                                                      |
+
+### Exit codes
+
+| Code | Meaning                                                                                                                                                   |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `0`  | Converged. A non-zero denominator was examined and no errors occurred.                                                                                    |
+| `2`  | Error or misconfiguration: no roadmap source, no `roadmap.tracker` block, no `GITHUB_TOKEN`, ticket fetch failed, or per-feature push/pull errors.        |
+| `3`  | **Zero denominator.** Zero roadmap rows parsed, or zero tickets fetched with a tracker configured. A sync that matched nothing has abstained, not passed. |
+
+Exit code `3` exists because the failure this command guards against is silent. A run that fetched zero tickets — wrong repo, unreadable token, selector labels matching nothing — would otherwise print "nothing to do" and exit `0` forever. Every run reports its denominator first: rows compared, tickets fetched.
+
+### The two guards, and why they are not optional
+
+An unattended nightly sync is only safe if both destructive powers can be switched off.
+
+1. **Closing/reopening issues.** The tracker `statusMap` maps `done → closed`, and the adapter patches issue `state` alongside the status label. One mis-set roadmap row is enough to close a live issue. `--no-state-change` omits the `state` field from every patch body entirely.
+2. **Creating issues.** The push phase creates tickets for rows with no `External-ID`. A cron that invents issues is unacceptable. `--no-create` reports each such row instead — it never silently drops one.
+
+Both default to **on** (today's behaviour) so nothing existing changes; CI is expected to turn them off explicitly.
+
+### Intended CI pattern
+
+Run a nightly job that converges labels and planning fields only:
+
+```yaml
+- name: Converge roadmap labels
+  run: harness roadmap sync --apply --no-create --no-state-change
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+Issue **closure** stays with the PR-merge auto-done path (`harness roadmap reconcile --from-refs`), which is driven by a PR's closing-issue references and is therefore authoritative. The nightly job's job is to stop label drift, not to decide what is done.
+
+### Strengths
+
+- Safe by default: the dangerous mode requires two explicit flags (`--apply`, and not passing the guards).
+- Reports the denominator on every run, so a silently-degraded job is visible in the first log line.
+- `--json` output is stable and CI-parseable, including the guard state, so a log records exactly what was permitted.
+
+### Pitfalls and watch-outs
+
+- **`--force` is not for CI.** It overrides the human-always-wins rule and will happily walk a hand-set `done` back to `in-progress`. Use it interactively, after looking at the dry run.
+- **Dry run does not prove a later apply is identical.** The tracker can change between the two runs; treat the dry-run report as a preview, not a contract.
+- **`--no-state-change` does not stop the local pull.** Inbound status still updates roadmap rows (that direction is not destructive to the tracker). Only the outbound state patch is suppressed.
+- **`--no-create` leaves rows unlinked.** Skipped rows stay without an `External-ID` run after run; the skip list is the signal to create them deliberately.
+- **Exit `3` is not a failure of your change.** It usually means credentials or selector labels, not a broken roadmap. Read the denominator line before debugging anything else.
+
+## Roadmap Feature Fields
+
+After enabling sync, your roadmap features gain three new optional fields:
+
+```markdown
+### My Feature
+
+- **Status:** in-progress
+- **Spec:** docs/changes/my-feature/proposal.md
+- **Summary:** Implement the widget system
+- **Blockers:** —
+- **Plan:** docs/changes/my-feature/plans/2026-04-01-my-feature-plan.md
+- **Assignee:** @username
+- **Priority:** P1
+- **External-ID:** github:owner/repo#42
+```
+
+| Field         | Description                                                                                                       |
+| ------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `Assignee`    | GitHub username, email, or display name. Updated by external sync.                                                |
+| `Priority`    | Optional override: `P0`, `P1`, `P2`, `P3`. When present, replaces position as the primary sort key for auto-pick. |
+| `External-ID` | Auto-populated by sync. Format: `github:owner/repo#42`. Do not edit manually.                                     |
+
+These fields are conditionally emitted — if none are set on a feature, the markdown output is identical to before (no diff noise on legacy roadmaps).
+
+## Assignment History
+
+An `## Assignment History` section is automatically maintained at the bottom of `roadmap.md`. Each record is a block of four `- **Key:** value` bullets — the same line grammar a feature row uses:
+
+```markdown
+## Assignment History
+
+- **Feature:** Widget System
+- **Assignee:** @alice
+- **Action:** assigned
+- **Date:** 2026-04-01
+
+- **Feature:** Widget System
+- **Assignee:** @alice
+- **Action:** completed
+- **Date:** 2026-04-03
+
+- **Feature:** API Gateway
+- **Assignee:** @bob
+- **Action:** assigned
+- **Date:** 2026-04-02
+```
+
+A record starts at its `- **Feature:**` bullet, so the blank lines between blocks
+are cosmetic. The section was a markdown pipe table before v5; a feature name
+containing a `|` silently destroyed its own record on the next read, so the column
+separator was removed rather than escaped (#1811). Documents still carrying the old
+table are still read — only the writer changed — but a legacy row whose value
+contained a `|` was already lost when it was written and cannot be recovered.
+
+### When the section cannot be read
+
+If the section is present and holds lines that look like records (`- **` bullets or
+`|` table rows) but not one of them parses, the read **fails loudly** rather than
+reporting an empty history (#1862). It has to: `serializeRoadmap` omits the section
+when there are no records, so an unreadable history and an absent history used to
+produce byte-identical output — and `harness roadmap regen` deleted the whole
+section at exit 0 with a success banner.
+
+One pre-v5 tolerance was withdrawn to make that guarantee hold: a legacy pipe table
+whose `|---|---|---|---|` separator row is missing used to read as an empty history.
+Its rows are unrecoverable either way (the separator is what marks where the data
+begins), so the only thing that changed is that you hear about it. Restore the
+separator row by hand to make such a table readable again.
+
+Prose placeholders, HTML comments, thematic breaks, a fenced example that merely
+_demonstrates_ the grammar, and any section that follows the history all still
+parse as an empty history — the failure fires only on lines that could be carrying
+real records. It fires even when some records _did_ read: a half-migrated section
+that yields two records and four unreadable lines is still four records about to
+be deleted.
+
+The section runs from its heading to the next heading at level 1 or 2. An `###`
+under it is a subsection **of** it, so a history hand-grouped by quarter reads
+normally.
+
+### Recovering a wedged repo
+
+Because the failure is raised at the parser, it fails reads as well as writes, and
+the `harness roadmap install-hook` pre-commit step blocks every shard-touching
+commit while `_meta.md` is in that state — including the commit that repairs it.
+To regenerate anyway without losing the section, use the recovery hatch. It
+carries the unreadable section into the aggregate **verbatim**, so nothing is
+dropped:
+
+```bash
+harness roadmap regen --allow-unreadable-history
+```
+
+The pre-commit hook runs the bare command, so give it the environment variable
+instead when you need a commit to get through:
+
+```bash
+HARNESS_ROADMAP_ALLOW_UNREADABLE_HISTORY=1 git commit -m "repair the history section"
+```
+
+Both preserve the section; neither discards it. Every run that uses the hatch says
+so on stderr, and `--format json` reports `carriedUnreadableHistory: true`.
+
+**The hatch unwedges `roadmap regen` only.** The aggregate it writes still contains
+the unreadable section, so `docs/roadmap.md` does not itself parse: `harness
+validate` will abstain on the aggregate-drift check, `harness roadmap triage`
+reports a parse error, and `harness roadmap shard` / `unshard` still fail. Those
+stay blocked until you repair the section itself. The hatch buys you a commit, not
+a working repo — so use it to _land the repair_, not to live with the breakage.
+
+Never bypass the pre-commit gate to get around any of this.
+
+Reassignment produces two records: `unassigned` for the previous assignee, then `assigned` for the new one. This provides a complete audit trail and enables affinity-based routing.
+
+## Auto-Pick Pilot
+
+The `harness-roadmap-pilot` skill uses the roadmap to recommend the next highest-impact item to work on.
+
+### How It Works
+
+1. **Filter** — Only unblocked items with status `planned` or `backlog` are candidates
+2. **Score** — Two-tier sort:
+   - **Tier 1:** Items with explicit `Priority` sort first (P0 > P1 > P2 > P3)
+   - **Tier 2:** Within each tier, weighted score: position (0.5) + dependents (0.3) + affinity (0.2)
+3. **Recommend** — AI reads top candidates' specs and presents a recommendation with reasoning
+4. **Confirm** — Human approves the selection
+5. **Route** — If spec exists → `harness:autopilot`; if no spec → `harness:brainstorming`
+6. **Assign** — Updates `Assignee` field, appends to assignment history, syncs to external tracker
+
+### Affinity Scoring
+
+The affinity weight (0.2) gives a bonus to candidates where the current user has context:
+
+- **Blocker affinity (1.0):** User completed a blocker of this candidate
+- **Sibling affinity (0.5):** User completed another feature in the same milestone
+
+### Invoking the Pilot
+
+```
+/harness:roadmap-pilot
+```
+
+The pilot reads `docs/roadmap.md`, scores candidates, and walks you through the selection.
+
+## Troubleshooting
+
+### Sync Not Firing
+
+1. Check that `harness.config.json` has a valid `roadmap.tracker` section
+2. Check that `GITHUB_TOKEN` is set in your environment
+3. Check that `docs/roadmap.md` exists
+
+### Status Not Updating from GitHub
+
+The directional guard prevents status regression. If a GitHub Issue is reopened after being closed, the roadmap status will not revert from `done` to `in-progress` unless you set `forceSync: true` in the sync options.
+
+### Labels Not Matching
+
+Ensure your `reverseStatusMap` compound keys match the exact labels the adapter applies. For example, if you use custom labels, update both `statusMap` (push) and `reverseStatusMap` (pull) to match.
+
+### Feature Not Syncing
+
+Features need either no `External-ID` (to create a new issue) or a valid `External-ID` in `github:owner/repo#number` format. Malformed IDs are skipped with an error logged to stderr.
+
+## File-less mode
+
+### What it is
+
+File-less mode is an opt-in roadmap storage mode where the configured GitHub Issues tracker is the canonical source of truth — `docs/roadmap.md` does not exist in a file-less project. Multi-session write conflicts are delegated to the tracker via ETag-conditional reads and best-effort conflict detection on writes. The file-backed mode described above remains the default; opting in is explicit.
+
+See ADR 0008 (IssueTrackerClient abstraction in core), ADR 0009 (audit history as issue comments), the `File-less Roadmap Mode` business_concept at `docs/knowledge/roadmap/file-less-roadmap-mode.md`, and the `Tracker as Source of Truth` business_rule at `docs/knowledge/roadmap/tracker-as-source-of-truth.md`.
+
+### How to opt in
+
+1. Ensure `roadmap.tracker` is configured in `harness.config.json` (see "Configuration" above).
+2. Set `roadmap.mode: "file-less"` in `harness.config.json`.
+3. Preview the migration: `harness roadmap migrate --to=file-less --dry-run`. The output shows what would be created, updated, and appended to history without making any GitHub API writes.
+4. Commit the migration: `harness roadmap migrate --to=file-less` (no flag). The command creates missing issues, writes body metadata blocks, posts deduplicated history comments, archives `docs/roadmap.md` to `docs/roadmap.md.archived`, writes a `harness.config.json.pre-migration` backup, and flips `roadmap.mode`.
+5. Verify: `harness validate` — it will reject the project if `docs/roadmap.md` still exists, or if `roadmap.tracker` is missing.
+
+### Behavioral differences
+
+- Sort order is `Priority` (P0–P3), falling back to issue creation order. No positional ordering — features cannot be reordered by rewriting positions.
+- `harness:roadmap-pilot` scoring uses the file-less algorithm (`scoreRoadmapCandidatesFileLess` in `packages/core/src/roadmap/pilot-scoring.ts`).
+- Concurrent claim races are best-effort detected, NOT atomically prevented (see proposal §F2 and ADR 0009 §Consequences — GitHub REST does not honor `If-Match` on issue PATCH).
+- The dashboard surfaces conflicts as HTTP `409 TRACKER_CONFLICT`; the React-side UX for the conflict toast ships in Phase 7 (see roadmap row "Tracker-Only Roadmap (File-less Mode)").
+- The `fullSync` engine is bypassed in file-less mode (the tracker IS the truth, so there is nothing to bidirectionally sync).
+- `manage_roadmap` MCP tool is mode-aware and dispatches through `IssueTrackerClient` — no `docs/roadmap.md` reads or writes.
+
+### Migration command
+
+The full operator walkthrough lives in `docs/changes/roadmap-tracker-only/migration.md`. The CLI flag reference lives in `docs/reference/cli-commands.md` §`harness roadmap migrate`. Quick inline example:
+
+```sh
+# Preview only — no writes.
+harness roadmap migrate --to=file-less --dry-run
+
+# Commit the migration.
+harness roadmap migrate --to=file-less
+```
+
+### Troubleshooting
+
+- **`ROADMAP_MODE_MISSING_TRACKER`** from `harness validate`: `roadmap.tracker` is not configured. Set `roadmap.tracker.kind: "github"` and `roadmap.tracker.repo` in `harness.config.json`, then re-run `harness validate`.
+- **`ROADMAP_MODE_FILE_PRESENT`** from `harness validate`: `docs/roadmap.md` exists in a file-less project. Either re-run `harness roadmap migrate --to=file-less` to archive it, or manually `rm docs/roadmap.md` if you have intentionally archived it elsewhere.
+- **HTTP 409 `TRACKER_CONFLICT`** from a dashboard claim: another session claimed the feature in the same window. Refresh the dashboard and retry; the React-side auto-refresh ships in Phase 7.

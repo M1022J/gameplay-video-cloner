@@ -1,0 +1,314 @@
+# Local Model Lifecycle Manager (Operator Guide)
+
+## Overview
+
+The Local Model Lifecycle Manager (LMLM) gives the orchestrator hardware-aware,
+disk-budget-bounded autonomy over a pool of local models. It is **opt-in**:
+`localModels.enabled` is `false` by default, and with it off, behavior is
+byte-identical to today's hand-curated `LocalModelResolver`. When enabled, LMLM is
+**additive** to the resolver — the resolver's candidate list is derived from pool
+state (ordered by score) instead of a hand-maintained `model: [...]` array, and the
+orchestrator proposes pool add/swap/evict changes through the shared review queue.
+
+Before relying on autonomy, read [Known limitations](#known-limitations-read-before-relying-on-autonomy)
+below — the autonomous swap-proposal loop is inert in production until a later phase
+lands, and several surfaces are intentionally read-only in v1.
+
+## Enabling LMLM
+
+Add a `localModels` block to `harness.config.json`. All fields are optional except
+`enabled`; the defaults below preserve safe behavior:
+
+```yaml
+localModels:
+  enabled: false # opt-in; default off preserves today's behavior
+  pool:
+    diskBudgetGb: 100
+    allowedOrgs: ['Qwen', 'deepseek-ai', 'meta-llama', 'mistralai']
+    allowedFamilies: [] # empty = all families under the allowed orgs
+    # eviction policy is fixed to lowest-score-LRU in v1 (D14)
+  refresh:
+    intervalMs: 86400000 # 24h default; minimum 3600000 (1h)
+    proposalThreshold: 5 # minimum score delta to emit a proposal
+    jitterMs: 600000 # ±10min jitter to avoid a fleet-wide thundering herd
+  installer:
+    backend: 'ollama' # "ollama" | "advisory"
+    ollamaEndpoint: 'http://localhost:11434'
+  hardware:
+    override: # optional manual override; skips hardware detection
+      platform: 'nvidia'
+      vramGb: 24
+      bandwidthGbps: 1008
+```
+
+Set `enabled: true` to turn LMLM on. With `installer.backend: 'ollama'`, LMLM drives an
+already-running Ollama over its REST API. With `installer.backend: 'advisory'` (or any
+non-Ollama backend), LMLM surfaces copy-paste install commands instead of mutating
+anything — see [ADR 0062](../knowledge/decisions/0062-pool-bounded-autonomy-and-ollama-first-install.md).
+
+## First-time pool setup
+
+The pool starts **empty**. Grant LMLM its autonomy envelope once, up front:
+
+- Set the disk budget: `harness models pool set-budget <GB>`
+- Allow the HuggingFace orgs you trust: `harness models pool allow-org <org>`
+- Optionally narrow to specific families: `harness models pool allow-family <family>`
+
+The disk budget plus the org/family allowlist are the **only** boundary LMLM operates
+within. Inside that boundary the orchestrator may pull, swap, and evict autonomously;
+nothing crosses that line without an explicit proposal approval. This per-pool (not
+per-model) authorization is the core of [ADR 0062](../knowledge/decisions/0062-pool-bounded-autonomy-and-ollama-first-install.md).
+
+### Discovery is a wide net; the ranker judges
+
+For each approved org, candidate discovery casts a **wide net**: it merges
+HuggingFace `trending` (new/hot) with `downloads` (established), dedupes by model id,
+and caps the union at the per-org limit. This is deliberate — sorting by cumulative
+downloads alone lags the landscape by months, so a brand-new leader gets crowded out
+of the pool before the benchmark ranker can score it (the cause of stale
+recommendations). Discovery's job is **coverage, not quality**: the `allowedOrgs` /
+`allowedFamilies` allowlist is the operator's trust gate, and the benchmark ranker is
+the sole quality authority — it decides which of the discovered candidates to
+recommend. A HuggingFace `trending` outage degrades gracefully to `downloads` only, so
+a refresh never breaks. See [ADR 0077](../knowledge/decisions/0077-discovery-is-a-wide-net-ranker-judges.md).
+
+## What a proposal looks like
+
+When LMLM wants to change the pool it emits a **model proposal** into the shared review
+queue (the same queue that carries skill proposals — one queue, two kinds, per
+[ADR 0058](../knowledge/decisions/0058-generalize-skill-proposal-into-discriminated-proposal.md)).
+Each proposal carries a `justification` so you can decide without leaving the queue:
+
+- `summary` — one-line rationale for the change
+- `benchmarkBasis` — the benchmark evidence behind the score
+- `hardwareFit` — how the target fits the detected hardware (VRAM, speed)
+- `evidence` — the graded supporting data points
+- `freshness` — the data recency (e.g. "Benchmark snapshot 2026-05-21")
+
+A proposal is an `add`, `swap`, or `evict` against a specific pool entry, with a
+`scoreDelta` and a `diskImpactGb` estimate.
+
+## Approve / reject
+
+Model proposals get a single approve/reject decision, from either surface:
+
+**CLI**
+
+- `harness models proposals` — list pending model proposals
+- `harness models approve <id>` — approve (drives the install/swap/evict)
+- `harness models reject <id> --reason <text>` — reject (feeds dedup so the same
+  suggestion is not re-emitted)
+
+**Dashboard**
+
+- Open the `/s/local-models` panel. The **Recommendations** card lists pending model
+  proposals; approve/reject there routes through the shared
+  `POST /api/v1/proposals/:id/{approve,reject}` route (kind-aware — model proposals
+  dispatch to the live `PoolManager`).
+- The **Pool** card is **read-only** — see [Known limitations](#known-limitations-read-before-relying-on-autonomy).
+
+Approving a proposal installs (or swaps/evicts) via the configured backend, updates
+pool state, and the `LocalModelResolver` picks up the new member within a debounce
+window (see [How pooled models are consumed](#how-pooled-models-are-consumed)), not
+only on its next scheduled probe.
+
+## How pooled models are consumed
+
+Installing a model is only half the story — this is how a pooled model actually
+reaches inference. See [ADR 0064](../knowledge/decisions/0064-lmlm-task-aware-pool-consumption.md)
+for the rationale.
+
+- **Event-driven freshness.** A pool mutation (install / swap / eviction) emits a
+  `local-models:pool` event that debounce-triggers a resolver re-probe, so a
+  just-installed or swapped model becomes dispatchable in **seconds**, not up to a
+  full poll cycle (`localModel.probeIntervalMs`, default ~30s). The intelligence
+  (analysis) pipeline reads its model **live per request**, so a swap is consumed
+  without an orchestrator restart — unless you pinned a layer model
+  (`intelligence.models.sel` / `.pesl`), which stays fixed by design.
+- **Score seeding.** A freshly installed model enters the pool at its **real ranked
+  score**, not `0`, so it is selectable immediately instead of sitting at the bottom
+  until the next re-rank. (This is why an approved install no longer shows a
+  "pool member scoring 0" justification.)
+- **Task-aware selection.** Within a local backend, the resolver orders pooled
+  candidates by a **task profile** derived from the routed use-case:
+  code-editing tiers (`quick-fix`, `guided-change`, `full-exploration`) → **coding**,
+  the `diagnostic` tier → **reasoning**, everything else → **general** (the composite
+  score). Profiles come from the ranker weighting profile-relevant benchmarks; when
+  the benchmark data can't distinguish a profile, selection **degrades gracefully to
+  composite score-order**, so task-awareness never buries a well-scored model.
+- **Runtime self-correction.** A completed turn stamps `lastUsedAt` (so LRU eviction
+  reflects real usage) and clears a per-model **circuit breaker**. A model that fails
+  several consecutive inferences is **deprioritized** — the resolver rolls to a healthy
+  pooled alternative — until it succeeds again or a cooldown elapses. If the failing
+  model is the _only_ one loaded, it is still used (a flaky model beats none).
+- **Warming.** When the resolver's selection changes, it best-effort **warms** the new
+  model into VRAM so the next dispatch isn't a cold start — via Ollama's `keep_alive` for
+  the `local` backend, and via a 1-token completion for the `pi` (LM Studio /
+  OpenAI-compatible) backend, which has no `keep_alive`. Warming never blocks a dispatch;
+  a warm failure just means the first request pays the load cost.
+
+Runtime feedback (usage stamping + circuit breaker) and warming apply to **both** the
+`local` and `pi` backends.
+
+## Agentic suitability: `agenticScore` vs `score`
+
+"Fits VRAM and looks fast on paper" is **not** "usable for autonomous agentic
+dispatch". Live evidence: `llama3.3:70b` fit memory and its throughput _estimate_
+looked fine, but a real agentic turn took **~4 minutes**; `qwen2.5-coder:7b` is fast
+but **won't emit `tool_calls`**, so it can't drive the agent loop at all. So the
+ranker exposes a second, **separate** dimension alongside the primary `score`:
+
+- **`score`** — the size/speed/benchmark composite. Governs the **default ranking
+  order**; unchanged by the agentic dimension. Use it for non-agentic selection.
+- **`agenticScore`** — suitability for autonomous dispatch, composed as
+  `eligible ? f(latency) × benchmarkScore × (buildQuality?) : 0`, where `f(latency)`
+  decreases monotonically as measured turn latency rises. Callers selecting for
+  dispatch (the recommender / AMR) **sort by `agenticScore`**, not `score`.
+- **`agenticEligible`** / **`agenticReasons`** — the boolean gate plus
+  human-readable reasons (`'no tool-calling'`, `'toolCallingUnknown'`, a latency
+  reason, `'latency estimated (unmeasured)'`).
+
+Two gates set eligibility:
+
+1. **Tool-calling is a HARD gate.** `toolCalling: false` ⇒ `agenticEligible = false`
+   and `agenticScore = 0` — the model is **excluded** from agentic routing, not
+   merely down-ranked, because it cannot drive the loop. `undefined` (unprobed) is
+   **fail-open**: eligible but flagged `toolCallingUnknown`.
+2. **Measured latency gates over a budget.** `measuredAgenticLatencyMs` above
+   `latencyBudgetMs` (`RankOptions`, default 120 s) ⇒ ineligible. Under budget,
+   `agenticScore` scales inversely with latency. When latency is unmeasured, the
+   ranker falls back to the bandwidth **speed estimate**, steeply discounted and
+   flagged — so a probed model always out-scores an equivalent unprobed one.
+
+The ranker stays **pure**: those two signals arrive as candidate inputs
+(`RankerCandidate.toolCalling`, `.measuredAgenticLatencyMs`). The one-call helper
+`probeAgenticSignals` (in `capability/agentic.ts`) is the only I/O — it runs the
+deterministic tool-calling probe plus a single timed agentic call to fill them, and
+**never throws** (a probe outage returns undefined signals, which the ranker treats
+fail-open). With both inputs absent, the primary `score` and ordering are
+byte-identical to before this dimension existed.
+
+### Harness-fit probe: the empirical `buildQuality` tier (opt-in)
+
+Benchmarks and the thin tool-calling/latency probe are **necessary but
+insufficient** for autonomous coding. A live 3-way head-to-head
+(`llama3.3:70b` vs `gpt-oss:20b` vs `qwen3.6:27b`) proved it: `llama3.3:70b`
+**passes** the tool-calling gate and is fast, yet it **narrated instead of
+acting** — one tool call, no artifact, the gate never went green — while the two
+smaller models **acted and converged** (explored the workspace, wrote real code).
+No benchmark score and no thin-probe signal predicted this; only running the real
+harness on a contained task surfaced the act-vs-narrate split.
+
+The **harness-fit probe** supplies that missing evidence. It is the empirical
+third tier of the agentic dimension: it runs a benchmark-shortlisted candidate
+through a small contained coding task **on the real harness**, judges convergence
+(the task's own acceptance command) plus act-vs-narrate metrics from the recording
+stream, and maps them to a coarse `buildQuality ∈ [0, 1]`:
+
+- **converged** → HIGH (~0.9–1.0), scaled down by retries-to-converge;
+- **acted-not-converged** (artifacts or ≥2 tool calls, gate still red) → MID (~0.4–0.6);
+- **narrated** (no artifact, ≤1 tool call — the `llama3.3:70b` mode) → LOW (~0.0–0.15).
+
+That number feeds the **existing** `buildQuality` slot in the `agenticScore`
+composition above — **no ranker-math change**. So at equal benchmark score, an
+act-and-converge model out-ranks a narrate-only one for autonomous dispatch, while
+the default (non-agentic) `score` ordering is untouched.
+
+**Source of truth (D3).** `local-models` owns the **pure** parts — the
+`buildQuality` mapping (`scoreBuildQuality`), the cost-gating policy
+(`capability/probe-policy.ts`), and the `HarnessFitRunner` interface. The concrete
+runner — a single dispatch through an Ollama backend + a throwaway workspace + the
+acceptance gate — is implemented in the orchestrator and injected at the
+composition root, so `local-models` never depends on the orchestrator.
+
+**Cost gating (D4/D5).** A probe is expensive (pull + run), so it is **opt-in and
+bounded**:
+
+- **opt-in** — `localModels.harnessFit.enabled` is `false` by default; disabled,
+  the ranking is byte-identical to the benchmark+heuristic rank.
+- **top-N only** — only the benchmark **top-N** of the ranked shortlist are probed
+  (default 3). The full discovered set is **never** probed.
+- **cadence** — the probe runs on a cadence (a due-check on the last-probe
+  timestamp + `cadenceMs`), not on every discovery refresh.
+- **cache** — each `buildQuality` is cached keyed by **model+version** (stable
+  until a new release); a fresh cache entry within `cacheTtlMs` is not re-probed.
+- **prefilter** — candidates that don't VRAM-fit or that confirmed `toolCalling:
+false` are skipped (already agentically ineligible — a probe is wasted).
+- **fail-open** — any probe error/timeout/pull-failure leaves `buildQuality`
+  undefined → no ranking effect; the pool is never blocked.
+
+**Adopter-portable task suite.** The shipped probe tasks (`DEFAULT_HARNESS_FIT_TASKS`)
+are self-describing — each carries its own prompt and **acceptance command** and
+seeds only Node built-ins, so a probe runs against a throwaway workspace in **any**
+adopter project, not just this monorepo. Operators may override the suite via
+`localModels.harnessFit.taskIds`.
+
+Enable it under the `localModels` block:
+
+```yaml
+localModels:
+  enabled: true
+  harnessFit:
+    enabled: false # opt-in; default off — no probe runs, ranking unchanged
+    topN: 3 # probe only the benchmark top-N; never the full set
+    cadenceMs: 604800000 # 7d — the probe runs on a cadence, not every refresh
+    cacheTtlMs: 2592000000 # 30d — buildQuality cached by model+version
+    # taskIds: ['pure-fn', 'bugfix']  # optional probe-suite override
+```
+
+See [ADR 0081](../knowledge/decisions/0081-harness-fit-probe-benchmarks-prefilter-harness-judges.md).
+
+## Known limitations (read before relying on autonomy)
+
+These are current, deliberate boundaries in v1. None of them block the manual
+workflow; they scope what "autonomy" means today.
+
+1. **Autonomous proposals are inert until the Phase-2 candidate parser lands.** The
+   refresh scheduler is seeded with an **empty candidate set** — the live-HuggingFace →
+   `RankerCandidate` parser is not yet shipped, so in production the autonomous
+   swap-proposal loop **proposes nothing**. What works today: manual `harness models`
+   commands, the resolver deriving candidates from pool state, and silent drift
+   reconciliation (an operator `ollama rm` is reconciled on the next tick). The
+   autonomous discovery-and-propose loop is the piece still pending.
+2. **The dashboard Pool card is read-only.** There is no direct install or evict from
+   the UI. Mutate the pool through proposals (approve/reject) plus the `harness models`
+   CLI.
+3. **Eviction deferral (D10 / S1) is agent-run-coarse.** The "no mid-dispatch swap"
+   guarantee waits for a fully idle window rather than tracking per-request
+   granularity, so it **over-defers** — which is the safe direction (a swap waits
+   longer than strictly necessary rather than interrupting a live dispatch). See
+   [ADR 0060](../knowledge/decisions/0060-lmlm-operator-surfaces-and-dispatch-safe-eviction.md).
+
+## Troubleshooting
+
+| Symptom                                 | Cause & behavior                                                                                                                                                           |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ollama unreachable                      | Install adapter returns `installer_unavailable`; the pool is left **unchanged** and the proposal stays pending (safety invariant **S6**). Start Ollama and retry.          |
+| HuggingFace unreachable                 | Ranking falls back to the frozen `snapshot.json`; a warning names the snapshot date (**S4**). Refresh returns `200`/exit 0 (soft warning), not a hard failure.             |
+| Hardware detection fails                | LMLM falls back to a conservative CPU hardware profile (**S3**) and continues ranking against it. Use `hardware.override` to pin a profile explicitly.                     |
+| Disk budget exceeded                    | The change is rejected at the engine layer (**S5**) before any download; raise `pool.diskBudgetGb` or evict a lower-scored member first.                                   |
+| `harness models refresh` exits non-zero | HuggingFace is unreachable **and** no frozen snapshot is available — a hard failure (`503` over HTTP, non-zero CLI exit, **O4**). Restore connectivity or ship a snapshot. |
+
+## See also
+
+- [ADR 0061: LMLM as a standalone package with a native TS ranking port](../knowledge/decisions/0061-lmlm-package-boundary-and-native-ranking-port.md)
+- [ADR 0062: Pool-bounded autonomy with Ollama-first installation](../knowledge/decisions/0062-pool-bounded-autonomy-and-ollama-first-install.md)
+- [ADR 0064: Task-aware, self-correcting consumption of pooled local models](../knowledge/decisions/0064-lmlm-task-aware-pool-consumption.md)
+- [ADR 0058: Generalize SkillProposalSchema into a discriminated ProposalSchema](../knowledge/decisions/0058-generalize-skill-proposal-into-discriminated-proposal.md)
+- [ADR 0077: Discovery is a wide net; the benchmark ranker judges](../knowledge/decisions/0077-discovery-is-a-wide-net-ranker-judges.md)
+- [ADR 0081: Harness-fit probe — benchmarks pre-filter, the harness judges agentic fitness](../knowledge/decisions/0081-harness-fit-probe-benchmarks-prefilter-harness-judges.md)
+- [ADR 0059: Background refresh scheduler and silent drift reconciliation](../knowledge/decisions/0059-background-scheduler-and-silent-drift-reconciliation.md)
+- [ADR 0060: LMLM operator surfaces and dispatch-safe eviction](../knowledge/decisions/0060-lmlm-operator-surfaces-and-dispatch-safe-eviction.md)
+- [Local Model Lifecycle](../knowledge/orchestrator/local-model-lifecycle.md) — the domain knowledge doc.
+- [Multi-Backend Routing](./multi-backend-routing.md) — opting a backend into LMLM.
+
+### Harness-fit probe — implementation modules
+
+The probe is composed of these modules (pure policy/scoring in `local-models`, the
+injected I/O runner in `orchestrator`):
+
+- [`harness-fit.ts`](../../packages/local-models/src/capability/harness-fit.ts) — pure `scoreBuildQuality`, the `HarnessFitRunner` interface, and the portable default task suite.
+- [`probe-policy.ts`](../../packages/local-models/src/capability/probe-policy.ts) — cost-gating policy (top-N, cadence, cache freshness, prefilter).
+- [`harness-fit-rerank.ts`](../../packages/local-models/src/capability/harness-fit-rerank.ts) — threads probed `buildQuality` into a ranker re-rank.
+- [`harness-fit-cache-store.ts`](../../packages/local-models/src/capability/harness-fit-cache-store.ts) — persistent `buildQuality` cache + cadence timestamp.
+- [`harness-fit-runner.ts`](../../packages/orchestrator/src/agent/harness-fit-runner.ts) — the injected single-dispatch probe runner (orchestrator).

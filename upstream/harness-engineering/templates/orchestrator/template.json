@@ -1,0 +1,7 @@
+{
+  "name": "orchestrator",
+  "description": "Standard harness.orchestrator.md for the Harness Orchestrator",
+  "level": "basic",
+  "extends": "base",
+  "version": 1
+}
