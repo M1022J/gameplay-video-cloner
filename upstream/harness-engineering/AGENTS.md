@@ -1,0 +1,1278 @@
+# Harness Engineering: AI Agent Knowledge Map
+
+This is the single source of truth for AI agents working on the Harness Engineering project. It provides essential context about our repository structure, architecture, conventions, and where to find information.
+
+## Project Overview
+
+**Harness Engineering** is a comprehensive toolkit for transitioning from manual coding to **agent-first development**. We help teams architect software in ways that enable AI agents to execute, maintain, and improve code reliably and autonomously.
+
+### Purpose and Goals
+
+- Create a reusable library and toolkit for agent-first development
+- Establish patterns that make AI-driven development predictable and scalable
+- Document architectural decisions as the single source of truth
+- Enforce constraints mechanically rather than through code review
+- Measure and improve agent autonomy over time
+
+### Current Phase
+
+**Complete** — All core packages (types, core, cli, eslint-plugin, linter-gen, graph, intelligence, dashboard, orchestrator), 741 skills (claude-code, gemini-cli, codex, and cursor), 16 personas, 19 templates, and 3 progressive examples are implemented. The project is in adoption and refinement mode. See `examples/` for progressive tutorials.
+
+## Strategic Anchor
+
+This repository ships a **Strategic Anchor system** for projects that adopt
+harness. The anchor lives at `STRATEGY.md` in the repo root (peer of
+`README.md`) and grounds downstream agent skills with product-level context
+that the codebase alone cannot supply.
+
+### What STRATEGY.md is
+
+A short, durable file with five required sections (`Target problem`,
+`Our approach`, `Who it's for`, `Key metrics`, `Tracks`) plus three optional
+sections (`Milestones`, `Not working on`, `Marketing`). Frontmatter carries
+`name`, `last_updated` (ISO date), and `version`. Schema authority lives in
+`packages/types/src/strategy.ts` (cross-layer contract) and
+`packages/core/src/strategy/schema.ts` (Zod runtime validator). `harness validate`
+checks shape when the file exists.
+
+### How agents should read it
+
+1. **Before brainstorming a new feature** — `harness-brainstorming` Phase 1
+   EXPLORE reads `STRATEGY.md` if present and cites it as grounding in the
+   spec's `evidence` section. If a feature contradicts the strategy, surface
+   the contradiction explicitly during EVALUATE rather than auto-resolving.
+
+2. **Before picking the next roadmap item** — `harness-roadmap-pilot` Phase 2
+   RECOMMEND reads `STRATEGY.md` and applies strategy-alignment as a
+   tiebreaker bonus on top of impact × confidence ÷ effort.
+
+3. **Before generating candidate ideas** — `harness-ideate` reads
+   `STRATEGY.md` as grounding before producing ranked ideation under
+   `docs/ideation/<slug>-YYYY-MM-DD.md`.
+
+4. **As graph-queryable facts** — `BusinessKnowledgeIngestor.ingestStrategy`
+   (in `packages/graph/src/ingest/`) emits one `business_fact` node per
+   non-empty section. Nodes are tagged with `metadata.domain === 'strategy'`
+   and `metadata.source === 'STRATEGY.md'`. Query examples:
+   - `findNodes({ type: 'business_fact' })` filtered by `metadata.domain === 'strategy'`
+     returns all strategy sections.
+   - `getNode('bk:strategy:target-problem')` returns the target-problem fact.
+
+### What agents must not do
+
+- **Do not auto-generate `STRATEGY.md` from code, commits, ADRs, or roadmap state.**
+  Strategy is interview-driven only ([ADR-0036](docs/knowledge/decisions/0036-strategy-is-interview-driven.md)).
+  The interview lives in the `harness-strategy` skill and enforces pushback
+  rules (fluff detection, goal-as-strategy rejection,
+  feature-list-as-strategy rejection) capped at 2 rounds per section.
+- **Do not write `STRATEGY.md` section bodies** from any skill other than
+  `harness-strategy`. (Tooling may bump `version` / `last_updated`
+  frontmatter; section bodies are off-limits.)
+- **Do not conflate `STRATEGY.md` with `harness-roadmap.md`.** Strategy is
+  durable product-level anchor; roadmap is tactical phase tracker. See
+  [ADR-0035](docs/knowledge/decisions/0035-strategy-anchor-vs-roadmap-md.md)
+  and [`docs/conventions/strategy-vs-roadmap.md`](docs/conventions/strategy-vs-roadmap.md).
+- **Do not block on absence.** STRATEGY.md is opt-in. Every consumer
+  soft-fails when the file is missing — agents must do the same.
+
+### Adoption surface
+
+- `/harness:strategy` — run interview / update STRATEGY.md.
+- `/harness:ideate` — generate ranked candidate ideas grounded in strategy.
+- `harness-initialize-project` Phase 3 — 3-way yes/no/later question on
+  capturing strategy at project init. Decline persists to the event-sourced
+  `.harness` state (recorded as an event, read back via the snapshot
+  projection) as `init.strategy.declined: true` so re-runs respect the prior
+  decision.
+
+## Repository Structure
+
+This is a **monorepo** using pnpm workspaces and Turborepo for orchestration.
+
+```
+harness-engineering/
+├── packages/                  # Core application packages
+│   ├── types/                # Shared TypeScript types and interfaces
+│   ├── core/                 # Core runtime library and utilities
+│   ├── cli/                  # CLI tool (harness validate, check-deps, skill, state, etc.)
+│   ├── eslint-plugin/        # ESLint rules for constraint enforcement
+│   ├── linter-gen/           # YAML-to-ESLint rule generator
+│   ├── graph/                # Unified Knowledge Graph: LokiJS store, ContextQL queries, code/git/knowledge ingestion, FusionLayer search, 4 external connectors (Jira, Slack, Confluence, CI)
+│   ├── intelligence/         # Intelligence pipeline for spec enrichment, complexity modeling, and pre-execution simulation
+│   ├── stats/                # Statistical instruments (explore/exploit bandit, Bernoulli SPRT) as one namespace per instrument; leaf package depending only on types
+│   ├── dashboard/            # Local web dashboard for project health and roadmap visualization
+│   └── orchestrator/         # Agent orchestration daemon for dispatching coding agents to issues; supports multi-backend routing via `agent.backends` / `agent.routing`
+├── agents/                    # Agent configuration
+│   ├── skills/claude-code/   # 741 skills (skill.yaml + SKILL.md each)
+│   ├── skills/gemini-cli/    # 741 skills (mirrored from claude-code for platform parity)
+│   ├── skills/codex/         # 741 skills (mirrored from claude-code for platform parity)
+│   ├── skills/cursor/        # 741 skills (mirrored from claude-code for platform parity)
+│   ├── skills/templates/     # Shared discipline template (Evidence Requirements, Red Flags, Rationalizations to Reject)
+│   └── personas/             # 16 personas (adversarial-reviewer, architecture-enforcer, code-reviewer, codebase-health-analyst, documentation-maintainer, entropy-cleaner, frontend-races-reviewer, graph-maintainer, harness-pm, parallel-coordinator, performance-guardian, planner, security-reviewer, task-executor, typescript-strict-reviewer, verifier)
+├── templates/                 # 19 project scaffolding templates (language bases + framework overlays: Express, NestJS, Next.js, FastAPI, Django, Gin, Axum, Spring Boot, React Vite, Vue, and more) — plus the opt-in `ci-required-review` template that `harness init` renders into a GitHub Actions workflow + branch-protection ruleset wiring the `harness review-ci` required check, and the opt-in `ci-pre-merge-brief` template that renders a workflow + ruleset posting the senior-facing `harness pre-merge-brief` sticky PR comment
+├── examples/                  # Progressive tutorial examples
+│   ├── hello-world/          # Basic adoption level
+│   ├── task-api/             # Intermediate adoption level
+│   └── multi-tenant-api/     # Advanced adoption level
+├── docs/                     # Complete documentation suite (VitePress site; config at docs/.vitepress/config.mts)
+│   ├── standard/            # Harness Engineering principles and standard
+│   ├── guides/              # How-to guides and tutorials
+│   ├── reference/           # Configuration and API reference
+│   ├── api/                 # Handcrafted API documentation for all packages
+│   ├── architecture/        # Architecture analysis and diagrams
+│   ├── changes/             # Design change proposals and technical specifications
+│   ├── plans/               # Implementation and execution plans
+│   ├── research/            # Framework research and analysis
+│   ├── conventions/         # Format conventions (markdown interaction patterns)
+│   ├── knowledge/           # ADRs and package-specific knowledge docs
+│   ├── guidelines/          # Decision guides (e.g., MCP vs CLI)
+│   ├── solutions/           # Solved-problem playbooks
+│   └── blueprint/           # Blueprint HTML artifacts
+├── design-system/            # Design tokens and DESIGN.md for the dashboard
+├── scripts/                  # Build and maintenance scripts (barrel gen, coverage ratchet, doc gen, etc.)
+├── package.json             # Root package metadata and scripts
+├── tsconfig.json            # Root TypeScript configuration
+├── pnpm-workspace.yaml      # pnpm workspace definition
+├── turbo.json               # Turborepo configuration
+└── AGENTS.md                # This file - AI agent knowledge map
+```
+
+### Package Relationships
+
+- **types** → Shared type definitions (no dependencies)
+- **core** → Runtime library (depends on types)
+- **graph** → Knowledge graph for codebase relationships and entropy detection (depends on types)
+- **orchestrator** → Agent orchestration and multi-agent coordination (depends on core)
+- All packages follow strict dependency rules: no circular dependencies, no upward dependencies
+
+## Architecture
+
+### Layered Architecture
+
+We follow a strict, one-way dependency model:
+
+```
+Types (bottom layer - no dependencies)
+  ↓
+Configuration & Constants
+  ↓
+Repository & Data Access
+  ↓
+Services & Business Logic
+  ↓
+Agents & External Interfaces (top layer)
+```
+
+**Key Rule**: Layers can only depend on lower layers, never upward.
+
+### Design Decisions
+
+1. **TypeScript Strict Mode** - All code runs with strict type checking enabled
+2. **Project References** - We use tsconfig project references for proper compilation order and dependency validation
+3. **Monorepo Structure** - Enables shared code and consistent tooling across packages
+4. **Documentation-First** - All architectural decisions live in git as version-controlled markdown
+5. **Result<T, E> Pattern** - Explicit error handling using Result types (similar to Rust's Result)
+
+### Module Boundaries
+
+Each package has a clear responsibility:
+
+- **types**: Type definitions, interfaces, and constants used across packages
+- **graph**: Knowledge graph store, ContextQL queries, code/git/knowledge ingestion, FusionLayer search
+- **core**: Runtime library with validation, constraints, entropy detection, architecture checks, and pricing/cost calculation (depends on types, graph)
+- **eslint-plugin**: ESLint rules for architectural constraint enforcement (depends on types, core)
+- **linter-gen**: YAML-to-ESLint rule generator (depends on types, core)
+- **intelligence**: Intelligence pipeline for spec enrichment, complexity modeling, and pre-execution simulation (depends on types, graph)
+- **stats**: Statistical instruments for the decisions the harness makes repeatedly under uncertainty — `bandit` (explore/exploit: `scoutFraction` and `thompson` policies over a half-life-decayed JSONL ledger at `.harness/metrics/bandit.jsonl`) and `sprt` (Bernoulli sequential probability ratio test with Wald bounds), one directory per instrument exported as one namespace. Safety-agnostic: consumers pass an already-filtered eligible set and exploration varies cost, never safety (ADR [0132](docs/knowledge/decisions/0132-safety-agnostic-stats-primitive.md)). No importers yet by design; the routing (#1557), fleet-command, and roadmap consumers are follow-on specs. Concepts: [`docs/knowledge/stats/explore-exploit.md`](docs/knowledge/stats/explore-exploit.md); placement: ADR [0131](docs/knowledge/decisions/0131-stats-leaf-package-home-for-statistical-instruments.md); reference: [`docs/reference/packages-stats.md`](docs/reference/packages-stats.md). (depends on types)
+- **orchestrator**: Agent orchestration daemon for dispatching coding agents to issues. Modern config surface is `agent.backends` (named-map) + `agent.routing` (per-use-case). Routing supports per-skill + per-cognitive-mode axes with fallback chains; dashboard `/routing` panel and `harness routing {config,trace,decisions}` CLI surface decision telemetry. Legacy `agent.backend` / `agent.localBackend` accepted via in-memory migration shim with deprecation warning. (depends on types, core, intelligence)
+  - **Staged dispatch (split-routing).** A unit is dispatched as a multi-stage workflow when a `>= 2`-stage workflow is declared for it in `agent.workflows` (`StagedWorkflowDecl[]`: `{ name, match: { identifierPrefix?, labels? }, stages, stageDeadlineMs? }`, parsed by `validateWorkflowConfig`). Staged _execution_ is **single opt-in** — the declaration alone selects the staged path via the pure `workflowFor(issue, config)` predicate (`workflow/workflow-for.ts`, which reads only `config.workflows`); `agent.routing.policy` is **not** required to run staged. Per-stage _tier routing_ is the additional (independent) opt-in: with a policy set the `AdaptiveRouter` routes each stage at its own required tier, and absent a policy each stage dispatches through the identity/default chain (`adaptiveRouter: null` → identity fallback). A 1-stage decl or no match falls back to the unchanged single-agent path (SC4); a 0-stage decl is a config error (D13). Each stage routes independently through the AMR at its own required tier on a **shared coherence unit** (one worktree, reused per attempt), with per-stage session/recorder/tokens/abort keyed by `stageAttemptKey(index, attempt)` (never the issue-level session — ADR 0068). The workflow owns exactly one terminal transition (success or failure+needs-human); issue-grain stall detection is bypassed for workflow units (their per-stage engine deadline owns liveness, D12). Homed in the orchestrator (ADR 0067). When no `>= 2`-stage workflow is declared, `dispatchIssue` is byte-behaviorally identical to single-agent dispatch. See ADRs 0065/0066/0067/0068 and `docs/changes/split-routing/proposal.md`.
+  - **Enforced local-gate loop.** On a `local`/`pi` dispatch the orchestrator enforces the workflow gates itself rather than trusting the small local model's self-discipline. When the agent exits, `finalizeNormalCompletion` runs `runLocalWorkflowGate` BEFORE the exit is treated as terminal: it runs verify (typecheck + lint + test, via an injectable `verifyRunner`) and — when a spec is present — the shared `OutcomeEvaluator` core (`evaluateOutcomeCore`, un-gated from the AMR-active/`acceptanceEval.enabled` requirements the Claude path keeps). A red verify or a high-confidence `NOT_SATISFIED` verdict routes through the SHIPPED `emitWorkerExit('error', …)` retry branch — the re-dispatch is the re-prompt (the failure reason is appended to the next rendered prompt post-render, since the LiquidJS renderer is `strictVariables`), and retry-budget exhaustion queues `needs-human`. The gate is a no-op (`{ ok: true }`) for non-local backends, so the Claude/AMR completion path is unchanged and the local gate composes with (does not replace) the AMR quality/retrospective feeders. See ADR 0070 and `docs/changes/local-backend-full-workflow/proposal.md`.
+  - **MCP tools for the local agent.** The `ollama` backend agent's built-in `bash`/`read_file`/`write_file` set can be extended with tools from configured MCP servers via `mcpServers` on the backend def — `context7` for live library docs, `harness-mcp` for code intelligence (`code_search`/`ask_graph`/`review_changes`/`outcome_eval`) against the agent's workspace. Tools are namespaced `<server>__<tool>`, opt-in per backend, and a server that fails to start is skipped so one flaky server never breaks a dispatch. See ADR 0073 and `docs/guides/multi-backend-routing.md#mcp-tools`.
+- **dashboard**: Web dashboard — React + Hono full-stack app with 13 pages (Signals default-landing panel, Adoption, Analyze, Attention, DecayTrends, Graph, Health, Impact, Maintenance, Orchestrator, Roadmap, Streams, Traceability), SSE-based live updates, and server-side data gathering. `/` redirects to `/s/signals` (Spec 534). (depends on types, core, graph)
+- **cli**: CLI tool and MCP server — top-level integration layer (depends on all packages)
+
+### Notable Core Modules
+
+- **pricing** (`packages/core/src/pricing/`): LiteLLM-based model pricing lookup. Fetches pricing data from LiteLLM's GitHub JSON with a 24h disk cache at `.harness/cache/pricing.json`, falling back to a bundled `fallback.json` for offline/CI use. Public API: `getModelPrice(model)` returns per-1M-token rates, `calculateCost(record)` returns integer microdollars (USD \* 1,000,000) to avoid floating-point drift. Supports Claude, GPT-4, and Gemini model families.
+  - `pricing.ts` — Parses LiteLLM's raw pricing JSON into a PricingDataset map, filtering to chat models with valid costs
+  - `calculator.ts` — Calculates cost of a usage record in integer microdollars accounting for input/output/cache tokens
+  - `cache.ts` — 24-hour TTL disk cache for LiteLLM pricing with fallback and staleness warning
+
+- **security** (`packages/core/src/security/`): Taint tracking, injection detection, and security rule enforcement.
+  - `taint.ts` — Session-scoped taint file read/write/check/clear/expire logic via `.harness/session-taint-{sessionId}.json`
+  - `scan-config-shared.ts` — Shared scan-config types and utilities for CLI and orchestrator workspace scanner
+  - `injection-patterns.ts` — Shared pattern library for detecting prompt injection attacks in text input
+  - `rules/sharp-edges.ts` — Rules for deprecated crypto APIs (createCipher/createDecipher) and weak cryptography
+  - `rules/insecure-defaults.ts` — Rules for hardcoded defaults on sensitive variables and TLS/SSL disabled by default
+  - `rules/agent-config.ts` — Rules for agent configuration (hidden unicode, URL execution directives, wildcard permissions)
+
+- **architecture** (`packages/core/src/architecture/`): Architecture stability tracking and constraint failure prediction.
+  - `timeline-types.ts` — Zod schemas for architectural timeline snapshots and per-category metric aggregates
+  - `timeline-manager.ts` — Disk I/O and lifecycle management for `timeline.json` storing historical stability snapshots
+  - `spec-impact-estimator.ts` — Mechanical extraction of structural signals (layer violations, coupling, complexity) from spec files
+  - `regression.ts` — Pure math module for weighted linear regression on metric time series
+  - `prediction-types.ts` — Zod schemas for regression results, direction classification, and failure forecasts
+  - `prediction-engine.ts` — Constraint failure prediction using timeline trends and roadmap impact to forecast threshold breaks
+
+- **usage** (`packages/core/src/usage/`): Token usage tracking and cost aggregation.
+  - `jsonl-reader.ts` — Extracts and validates token_usage from parsed JSONL entries
+  - `cc-parser.ts` — Parses Claude Code JSONL logs with deduplication of streaming chunks by requestId
+  - `aggregator.ts` — Aggregates UsageRecords from harness and claude-code sources by session and day with cost calculation
+
+- **adoption** (`packages/core/src/adoption/`): Skill adoption tracking and aggregation.
+  - `reader.ts` — Parses `.harness/metrics/adoption.jsonl` into `SkillInvocationRecord[]`
+  - `aggregator.ts` — Aggregates records by skill (`aggregateBySkill`) and by day (`aggregateByDay`); exports `DailyAdoption` type
+
+- **state** (`packages/core/src/state/`): Session state and learnings lifecycle management.
+  - `event-sourcing/` — **Event-sourced core state.** An authoritative append-only log (`state.events.jsonl`) is the single source of truth; a deterministic reducer composes three pure projections — `projectCoreState`, `projectLanes`, `projectAudit` — into a materialized snapshot (`state.snapshot.json`, derived cache). Includes the guarded lane state machine (`lane-machine.ts`) and `transitionLane`. The `toHarnessState` adapter bridges `coreState` back to the legacy `HarnessState` shape so readers migrate by swapping `loadState(...)` for `toHarnessState(readSnapshot(...).coreState)`. See [`docs/knowledge/core/event-sourced-state.md`](docs/knowledge/core/event-sourced-state.md) and ADRs [0048](docs/knowledge/decisions/0048-event-log-authoritative-snapshot-derived.md) / [0049](docs/knowledge/decisions/0049-guarded-lane-state-machine.md).
+  - `session-sections.ts` — Loader for session-state.json managing accumulative sections (terminology, decisions, constraints, risks, openQuestions, evidence)
+  - `session-archive.ts` — Archives completed sessions by moving directory to `.harness/archive/sessions/<slug>-<date>`
+  - `learnings-loader.ts` — Mtime-based cache loader for learnings files; leaf module preventing circular dependencies
+  - `learnings-lifecycle.ts` — Archive/prune/promotion/counting operations on learnings with pattern analysis
+  - `learnings-content.ts` — Content deduplication via normalization, content hashing, and hash index management
+
+  **On-disk layout** (resolved per `getStateDir` scope — global / stream / session):
+  - `state.events.jsonl` — authoritative append-only event log.
+  - `state.events.blobs/<hash>.json` — spilled oversized event payloads (kept out of the log line so each line stays within one atomic append).
+  - `state.snapshot.json` — derived materialized snapshot (`schemaVersion: 2`, `{ coreState, lanes, audit, meta.lastSeq }`); never authoritative, recomputed on staleness.
+  - `metrics/skill-events.jsonl` — relocated skill-lifecycle telemetry.
+  - The legacy `events.jsonl` is **retired** — it was born-deduplicated and observability-only; its entries are discarded (not imported), and the timeline is now derived from the `audit` projection.
+
+  **`manage_state` MCP tool** (`packages/cli/src/mcp/tools/state.ts`): mutating actions **append events** to the log; read actions read the **snapshot/projection** (`toHarnessState(readSnapshot(...).coreState)`). The `task-transition` action wraps `transitionLane` (`taskId`, `toLane`, `dependsOn?`, `evidence?`, and `force?` + `actor?` + `reason?` for off-table moves), applying the dependency / evidence-for-terminal / forced-transition guards.
+
+- **code-nav** (`packages/core/src/code-nav/`): Tree-sitter-based code navigation and symbol extraction.
+  - `outline.ts` — Extracts top-level code symbols (functions, classes, interfaces, types) with locations
+  - `unfold.ts` — Extracts specific symbol implementations or line ranges from source files
+  - `parser.ts` — Web-tree-sitter parser wrapper with language detection and grammar caching for TS/JS/Python
+
+- **review** (`packages/core/src/review/`): Code review evidence validation.
+  - `evidence-gate.ts` — Parses file:line references from evidence entries and validates coverage against changed files
+
+- **roadmap** (`packages/core/src/roadmap/`): Roadmap parsing, sync, and pilot selection (see also Project Roadmap section).
+  - `tracker-sync.ts` — Abstract interface for syncing roadmap features with external trackers
+  - `sync-engine.ts` — Bidirectional roadmap-to-external-tracker sync with title dedup and status rank protection
+  - `status-rank.ts` — Status rank ordering (backlog < planned/blocked < in-progress < done) for directional sync protection
+  - `pilot-scoring.ts` — Pilot selection algorithm scoring candidates by position, dependents, and affinity within priority tiers
+  - `adapters/github-issues.ts` — GitHub Issues sync adapter with label-based status disambiguation
+
+### Notable Intelligence Modules
+
+- **sel** (`packages/intelligence/src/sel/`): Spec Enrichment Layer — enriches raw work items with blast radius, affected systems, and graph-validated context.
+- **cml** (`packages/intelligence/src/cml/`): Complexity Modeling Layer — scores structural and semantic complexity, computes historical trends, and emits concern signals.
+- **pesl** (`packages/intelligence/src/pesl/`): Pre-Execution Simulation Layer — runs graph-only constraint checks and LLM-based simulations before agent dispatch.
+- **outcome** (`packages/intelligence/src/outcome/`): Execution outcome ingestion — connects actual execution results back into the intelligence pipeline for feedback.
+- **effectiveness** (`packages/intelligence/src/effectiveness/`): Persona effectiveness scoring, blind spot detection, and persona recommendation for agent routing.
+- **specialization** (`packages/intelligence/src/specialization/`): Persistent agent expertise tracking with temporal decay, specialization profiles, and weighted persona recommendation.
+- **analysis-provider** (`packages/intelligence/src/analysis-provider/`): Pluggable LLM analysis backends (Anthropic, OpenAI-compatible, Claude CLI).
+- **adapters** (`packages/intelligence/src/adapters/`): Work item adapters for Jira, GitHub, Linear, and manual input normalization, plus the **canary adapter** (`canary.ts`) — a total, gracefully-degrading boundary around the optional `canary-test-cli` (probe / recommendFramework / reviewTest / listFrameworks, zod-validated; never throws when canary is absent). See ADR-0039 and `docs/knowledge/intelligence/canary-adapter.md`. Skills reach it via the `canary_probe` and `canary_recommend_framework` MCP tools, wired into the `harness-test-advisor` Coverage Audit for graceful degradation and deterministic framework recommendations. `harness-verify` DETECT consults `canary_discover_test_command` (registry-truth test command, longest-suffix framework match) before its package.json/Makefile heuristics, and `harness-tdd` RED offers canary generation via `/canary-write-test` + `canary_recommend_framework` (detect-and-offer); both fall back to today's behavior when canary is absent.
+
+### Additional Core Modules
+
+- **compaction** (`packages/core/src/compaction/`): Reduces MCP tool response token consumption through structural and truncation strategies with pagination support.
+- **annotations** (`packages/core/src/annotations/`): Parses and manages protected code regions marked with annotations to prevent modification.
+- **blueprint** (`packages/core/src/blueprint/`): Generates HTML documentation/UI from module data using templating and content pipeline processing.
+- **ci** (`packages/core/src/ci/`): Orchestrates CI checks and formatting, producing reports and notifications.
+- **caching** (`packages/core/src/caching/`): Manages prompt cache adapters and stability classification for multiple LLM providers.
+- **constraints** (`packages/core/src/constraints/`): Validates architectural layers, detects circular dependencies, and enforces boundary rules across modules.
+- **context** (`packages/core/src/context/`): Documentation coverage analysis, knowledge map validation, and progressive skill loading with token budgets.
+- **entropy** (`packages/core/src/entropy/`): Detects and remediates codebase entropy including dead code, drift, complexity violations, coupling problems, and duplicated code units (clone classes).
+- **health-signals** (`packages/core/src/health-signals/`): Canonical signal<->check contract. `SIGNAL_REGISTRY` is the single source of truth from which `SignalName`, `CHECK_SIGNAL_MAP`, `SIGNAL_CATEGORY_MAP`, and `HEALTH_SIGNAL_NAMES` are derived; `reconcilePassed(checks, signals)` keeps a check's `passed` true only if assess passed and no contradicting signal is present (never flips false→true). Consumed by the cli health-snapshot/dispatch surface and core `strength-007`. See [ADR-0047](docs/knowledge/decisions/0047-canonical-signal-check-contract-in-core.md) and [`docs/knowledge/core/health-signal-contract.md`](docs/knowledge/core/health-signal-contract.md).
+- **feedback** (`packages/core/src/feedback/`): Self-review, peer review, telemetry, and action tracking for code change analysis and agent feedback loops.
+- **interaction** (`packages/core/src/interaction/`): Schemas and types for structured agent-to-human interactions (questions, confirmations, transitions).
+- **locks** (`packages/core/src/locks/`): Compound locking mechanisms for coordinating concurrent access to shared resources.
+- **performance** (`packages/core/src/performance/`): Benchmarks, tracks baselines, detects regressions, and identifies critical paths in code.
+- **pipeline** (`packages/core/src/pipeline/`): Executes multiple skills sequentially or in turn-based workflows with result aggregation.
+- **pulse** (`packages/core/src/pulse/`): Orchestrates data collection from multiple sources with sanitization, windowing, and headline extraction.
+- **solutions** (`packages/core/src/solutions/`): Scans and validates solution documentation with frontmatter schemas for bug tracking and knowledge categories.
+- **validation** (`packages/core/src/validation/`): Validates project structure, configuration, commit messages, and agent/roadmap/solutions compliance.
+- **workflow** (`packages/core/src/workflow/`): Executes structured workflows with multiple steps (experimental, internal use only).
+
+### Additional Graph Subsystems
+
+- **nlq** (`packages/graph/src/nlq/`): Natural language query interface — translates questions about the codebase into graph operations with intent classification, entity extraction, and human-readable summaries.
+- **independence** (`packages/graph/src/independence/`): Task independence analysis and conflict severity prediction by detecting file overlaps and transitive dependency conflicts.
+- **constraints** (`packages/graph/src/constraints/`): Validates architectural layer boundaries and detects import violations against design constraints via the graph.
+- **feedback** (`packages/graph/src/feedback/`): Computes impact data tracking affected tests and documentation when files change, with harness health checks.
+- **context** (`packages/graph/src/context/`): Assembles contextual graph data filtered by development phase with token budgets and coverage reporting.
+- **entropy** (`packages/graph/src/entropy/`): Detects structural anomalies including statistical outliers and articulation points in the codebase graph.
+- **search** (`packages/graph/src/search/`): Hybrid search layer using keyword and semantic fusion to find relevant nodes in the knowledge graph.
+- **store** (`packages/graph/src/store/`): Core graph persistence and querying layer with node/edge management, serialization, and in-memory indexing.
+
+## Development Workflow
+
+### Prerequisites
+
+Ensure you have these tools installed:
+
+- **Node.js 22+** - Download from [nodejs.org](https://nodejs.org/)
+- **pnpm 8+** - Install with: `npm install -g pnpm`
+- **Git** - Required for version control
+
+Verify your setup:
+
+```bash
+node --version    # Should be 22.x or higher
+pnpm --version    # Should be 8.x or higher
+git --version     # Any recent version
+```
+
+### Setting Up the Project
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/Intense-Visions/harness-engineering.git
+cd harness-engineering
+
+# 2. Install all dependencies
+pnpm install
+
+# 3. Verify the setup by building
+pnpm build
+
+# 4. Run tests to ensure everything works
+pnpm test
+```
+
+### Common Development Tasks
+
+```bash
+# Install dependencies
+pnpm install
+
+# Build all packages
+pnpm build
+
+# Watch mode for development
+pnpm dev
+
+# Run all tests
+pnpm test
+
+# Run tests in watch mode
+pnpm test:watch
+
+# Run tests for a specific package
+pnpm test --filter=@harness-engineering/core
+
+# Lint all code
+pnpm lint
+
+# Format code (TypeScript, JavaScript, Markdown, JSON)
+pnpm format
+
+# Check formatting without making changes
+pnpm format:check
+
+# Type checking
+pnpm typecheck
+
+# Start documentation server
+pnpm docs:dev
+
+# Build documentation
+pnpm docs:build
+
+# Preview built documentation
+pnpm docs:preview
+
+# Clean build artifacts
+pnpm clean
+```
+
+> **Pre-push is affected-scoped.** `.husky/pre-push` scopes format-check,
+> typecheck, and coverage tests to the packages affected by your branch
+> (`turbo --affected`, base `origin/main`), and runs the coverage ratchet in
+> `--allow-missing` mode. Whole-repo format-check, all-package typecheck, the
+> full 3-OS test matrix, and the full (flagless) coverage ratchet are
+> **authoritative in CI**. So CI can legitimately catch something your scoped
+> pre-push did not — this is expected. If `origin/main` is unresolvable
+> (fresh clone / detached HEAD) pre-push falls back to the full unscoped gate.
+> See ADR `docs/knowledge/decisions/0075-affected-scoped-pre-push.md`.
+
+### Main-branch health alarm
+
+`.github/workflows/main-health.yml` watches `main`'s own CI so a red `main` cannot
+go unnoticed again (issue #987: `build-and-test` was red for eight days and the
+only thing that found it was a contributor triaging their own PR). It runs on a
+daily schedule **and** after every `main` run of `CI` completes, and calls
+`scripts/main-health-check.mjs`.
+
+- **Health rule (deliberately quiet):** `main` is unhealthy when the most recent
+  **2** _decisive_ runs both failed (`MAIN_HEALTH_THRESHOLD`). Decisive excludes
+  `cancelled`/`skipped` — CI runs with `cancel-in-progress: true`, so rapid
+  merges leave cancelled runs that say nothing about health. The louder
+  "most-recent-run-failed" rule would alarm on every flake, and a flaky alarm is
+  a muted alarm.
+- **Where the alarm lands:** a labelled tracking issue (`main-health-alarm`),
+  upserted — opened on green → red, **edited in place** while still red (never a
+  second issue, never a nightly comment), and commented + closed as an all-clear
+  on red → green. A step summary is written on every run regardless of verdict.
+- **Denominator discipline:** if fewer decisive runs than the threshold can be
+  resolved (renamed workflow file, API error, missing permission, quiet branch),
+  the check exits `3` INDETERMINATE and reports "abstained — not a pass". It
+  never reports healthy on an empty denominator, and it neither opens nor closes
+  an alarm in that state.
+- **Exit codes:** `0` healthy · `1` internal error · `2` unhealthy (alarm
+  raised) · `3` indeterminate · `4` alarm undelivered (verdict known, the issue
+  write failed). Full rationale is in the script header.
+- Logic is covered by `tests/scripts/main-health-check.test.mjs` with a fake
+  `gh`, so the tests never touch the network. Run
+  `node scripts/main-health-check.mjs --dry-run` locally to see the verdict
+  without writing anything.
+
+### Git Workflow and Commit Conventions
+
+We use **Conventional Commits** for clear, machine-readable commit messages:
+
+```
+type(scope): brief description
+
+Optional longer explanation of the change and why it was made.
+```
+
+**Commit Types:**
+
+- `feat:` - New feature or functionality
+- `fix:` - Bug fix
+- `docs:` - Documentation changes (no code changes)
+- `style:` - Code style changes (formatting, semicolons, etc.)
+- `refactor:` - Code changes without new features or fixes
+- `test:` - Test additions or modifications
+- `chore:` - Dependency updates, tooling, etc.
+
+**Example Commits:**
+
+```
+feat(core): add Result type for error handling
+fix(types): correct generic constraints on Handler interface
+docs: update AGENTS.md with architecture overview
+refactor(core): simplify validation logic
+test(core): add tests for Result type
+```
+
+## Key Concepts
+
+### Parallel execution is standard
+
+Parallel execution is now a **standard, automatic** part of the build loop — not a mode a
+human has to ask for. During execution the harness derives the task dependency DAG from
+each task's `dependsOn` edges and `files`, decides the maximum _safe_ parallelism, and
+dispatches it **without being asked**, while keeping the human gate exactly where predicted
+risk warrants it (announce-and-proceed).
+
+- **How it decides:** the `plan_parallelization` MCP tool (core module
+  `packages/core/src/parallelization/plan.ts`) wraps `findParallelGroups` +
+  `predict_conflicts` to produce a `ParallelizationPlan` — parallel `waves`, `serialized`
+  and `cyclic` channels, and a `narration`. Each wave gets a risk-tiered firing decision:
+  `auto-dispatch` (clean / low-severity with graph) proceeds with no stop; `confirm`
+  (medium severity, or graph unavailable) takes one confirmation; `serialize` (high
+  severity, or too few tasks) runs sequentially. See **ADR 0056**
+  (`docs/knowledge/decisions/0056-risk-tiered-non-blocking-dispatch.md`).
+- **The data model:** tasks carry an optional `dependsOn: string[]` — the explicit
+  dependency edge — validated for cycles and unknown ids. See **ADR 0057**
+  (`docs/knowledge/decisions/0057-depends-on-plan-task-schema.md`).
+- **The skills:** `harness-planning` records `dependsOn`; `harness-autopilot` (EXECUTE) and
+  `harness-execution` call `plan_parallelization` pre-dispatch; `harness-parallel-agents`
+  dispatches each wave with worktree-per-unit isolation
+  (`docs/guides/agent-worktree-patterns.md`).
+- **Concepts:** `docs/knowledge/core/parallelization-plan.md`.
+- **Serial is still the safe default:** fewer than `minWaveSize` (default 3) independent
+  tasks, a declined `confirm`, or no graph + no confirmation all fall back to sequential.
+
+### Compiled comprehension substrate
+
+The **comprehension substrate** is a persistent, per-module understanding layer —
+summary, invariants, interface contract, and dependency slice, one committed
+markdown unit per source directory — served to agents as their **primary** context
+so understanding stops being re-derived from raw source on every run. It attacks the
+dominant cost term in agent operation (context replay, not generation).
+
+- **What it is:** compiled once, recompiled only for the modules whose source
+  changed (the git diff is the invalidation signal), versioned alongside the code.
+  Units are markdown + YAML frontmatter under `.harness/comprehension/`, mirroring
+  the source tree. The static half (contract + slice) is AST-exact; the semantic
+  half (summary + invariants) is LLM-generated and treated as **advisory** — a leaf
+  always reads raw source for the region it actually edits.
+- **Usage:** `harness comprehend` maintains the substrate. `--changed` (default)
+  recompiles only modules owning changed files; `--all` backfills; `--check` is a
+  token-free freshness backstop (exits non-zero on any source-stale unit);
+  `--stats` reports served-vs-raw token savings; `--static` forces the static-only,
+  credential-free posture.
+- **The no-credential invariant:** correctness, `git push`, and CI **never** require
+  an LLM or an API token. A serve-time source-hash gate re-enumerates each module's
+  membership, recomputes a SHA-256, and refuses to serve any source-stale unit —
+  doing only enumeration + hashing + comparison, so it holds in CI and for adopters
+  with no model configured. Only the advisory semantic half calls a backend; when no
+  provider resolves, units are emitted static-only and everything still passes.
+- **How it is served:** units are returned as the primary context block by the
+  `gather_context` MCP tool's `comprehension` constituent and by the
+  `get_comprehension` tool (leaf-demand recompilation), with the graph/raw source as
+  fallback. Configured via the `comprehension` block in `harness.config.json`.
+- **Populate & maintain:** see the operator runbook
+  `docs/guides/comprehension-substrate.md` (configure a model, backfill, keep fresh).
+  The substrate is inert until populated.
+- **Concepts:** `docs/knowledge/comprehension/comprehension-substrate.md`; ADRs
+  0106 (`claude`-CLI resolver fallback), 0107 (committed substrate), 0108 (hash gate).
+
+### Result<T, E> Pattern
+
+We use a Result type (similar to Rust) for explicit error handling:
+
+```typescript
+type Result<T, E> = { ok: true; value: T } | { ok: false; error: E };
+```
+
+This provides:
+
+- **Explicit error handling** - No surprise errors
+- **Type-safe operations** - Compiler enforces error handling
+- **Clear intent** - Functions signal they may fail
+- **Composability** - Easy to chain operations
+
+### TypeScript Project References
+
+We use `tsconfig.json` project references for:
+
+- **Proper compilation order** - Dependencies compile first
+- **Incremental builds** - Only rebuild what changed
+- **Dependency validation** - Prevent circular dependencies
+- **Clear boundaries** - Explicit package dependencies
+
+Configuration example:
+
+```json
+{
+  "references": [{ "path": "./packages/types" }, { "path": "./packages/core" }]
+}
+```
+
+### CLI Subsystems
+
+**Commands** (`packages/cli/src/commands/`): ~50 commands organized by domain.
+
+_Project Setup:_ `init`, `install`, `uninstall`, `setup`, `setup-mcp`, `setup-types`, `migrate`, `install-constraints`, `uninstall-constraints`, `generate`
+
+_Validation & Checks:_ `validate`, `validate-cross-check`, `check-arch`, `check-deps`, `check-design`, `check-docs`, `check-harness-strength`, `check-perf`, `check-phase-gate`, `check-security`, `audit-protected`
+
+_Analysis & Intelligence:_ `predict`, `recommend`, `advise-skills`, `impact-preview`, `traceability`, `adoption`, `usage`, `scan-config`, `taint`, `search`, `insights`
+
+_Maintenance:_ `cleanup`, `cleanup-sessions` (with Hermes Phase 2 `--all` / `--include` / `--exclude`), `fix-drift`, `doctor`, `update`, `sync-main`, `sync-analyses`, `publish-analyses`, `snapshot`, `maintenance` (Hermes Phase 2: `list` / `show`; maintenance-pipeline Phase 3: `run [taskId...]` — on-demand, report-first sweep of overdue sweep-eligible tasks, `--all` / `--only` / `--skip` / `--fix` / `--concurrency` / `--json`, infra-free with no orchestrator), `mcp-guard` (Hermes Phase 2: pre-launch OSV malware check)
+
+`harness cleanup -t duplication` and the `detect_entropy` MCP tool's `type: "duplication"`
+report clone classes (whole-unit Type-2 clones at >= 3 members and >= 40 normalized tokens),
+ordered by `CloneClass.priority`: `tokenCount x members` (the `rank` field, which the signal
+never scales), DOUBLED for a `partial-extraction` class — one whose every member's BODY CALLS
+into a single common first-party module, named in `sharedImport`. "Calls" is literal and
+load-bearing: the binding must appear in every member body as a call callee, a method-call
+receiver, or a JSX element name. Merely REFERENCING a name the module exports is not enough,
+and an earlier revision that accepted it labelled three classes whose shared module exported no
+such helper at all — so the row promised a delete-and-import repair with nothing to import.
+A labelled row is usually the cheapest fix on the page, because the helper the body already
+calls is the thing the wrapper layer should have been reduced to; treat it as a strong lead,
+not a guarantee, and read the named module before planning the repair.
+They are **advisory**: clone classes never enter
+`CleanupResult.totalIssues`, so they never affect the exit code and never appear in the
+`--findings-json` contract, and on the MCP side they are reported under `advisory.duplication`
+outside `totalIssues` (spec decision D4 / [ADR-0134](docs/knowledge/decisions/0134-whole-unit-type-2-clone-detection-at-rule-of-three.md)).
+Under `-t all` / `type: "all"` the detector runs **only** when `entropy.duplication` is
+configured in `harness.config.json`; an explicit request runs on the shipped defaults, and
+`entropy.duplication: false` plus an explicit request REFUSES rather than reporting a clean
+scan it never ran.
+
+_Content & Generation:_ `blueprint`, `create-skill`, `generate-agent-definitions`, `generate-slash-commands`, `knowledge-pipeline`, `share`
+
+_Dashboard & Orchestrator:_ `dashboard`, `orchestrator`, `mcp`, `perf`
+
+_Command groups_ (subdirectories): `agent/`, `ci/`, `compound/`, `graph/`, `hooks/`, `integrations/`, `learnings/`, `linter/`, `persona/`, `pulse/`, `roadmap/`, `skill/`, `state/`, `telemetry/`
+
+_Notable single commands:_
+
+- `usage.ts` — Loads and prices usage records from cost data and Claude sessions
+- `taint.ts` — Manages session taint state to block destructive operations after injection detection
+- `doctor.ts` — Runs system health checks (Node version, MCP config, integrations)
+- `dashboard.ts` — Launches the web dashboard server on configurable ports
+- `search.ts` — Hermes Phase 1: FTS5 + BM25 over `.harness/sessions/` and `.harness/archive/sessions/` (`harness search "<query>" [--reindex] [--archived-only] [--json]`)
+- `insights.ts` — Hermes Phase 1: composite report combining health, entropy, decay, attention, impact (`harness insights [--json] [--skip <list>]`)
+- `_registry.ts` — Auto-generated barrel export aggregating all command constructors
+
+**Hooks** (`packages/cli/src/hooks/`): Claude Code lifecycle hooks for security and quality enforcement.
+
+- `sentinel-pre.js` — PreToolUse hook that blocks destructive bash operations during tainted sessions
+- `sentinel-post.js` — PostToolUse hook that scans outputs for injection patterns and sets taint
+- `quality-gate.js` — PostToolUse hook that runs formatter/linter checks after edits
+- `protect-config.js` — PreToolUse hook that blocks modifications to linter and formatter config files
+- `pre-compact-state.js` — PreCompact hook that saves a compact session summary before context compaction
+- `cost-tracker.js` — Stop hook that appends token usage to `.harness/metrics/costs.jsonl`
+- `block-no-verify.js` — PreToolUse hook that blocks git commands using `--no-verify` flag
+- `adoption-tracker.js` — Stop hook that reads Claude Code events.jsonl, extracts skill invocations, and appends SkillInvocationRecords to `.harness/metrics/adoption.jsonl`
+- `telemetry-reporter.js` — Stop hook that reads adoption.jsonl, resolves consent, sends anonymous events to PostHog, and shows first-run privacy notice
+- `profiles.ts` — Defines hook profile tiers (minimal/standard/strict) with event matchers
+
+**MCP Tools** (`packages/cli/src/mcp/tools/`): ~62 tools organized by domain.
+
+_Project & Validation:_ `init`, `validate`, `assess-project`, `phase-gate`, `state`, `compact`
+
+_Architecture & Quality:_ `architecture`, `entropy`, `stale-constraints`, `constraint-emergence`, `cross-check`, `linter`, `performance`
+
+_Code Navigation & Search:_ `code-nav`, `search-skills`, `recommend-skills`, `advise-skills`, `dispatch-skills`, `gather-context`, `find-context-for` (graph), `search-sessions` (Hermes Phase 1), `summarize-session` (Hermes Phase 1), `insights-summary` (Hermes Phase 1)
+
+_Skill Proposals (Hermes Phase 4):_ `emit_skill_proposal` (tier `standard`) — agents emit candidate skills or refinements; proposals land at `.harness/proposals/<id>.json` with `status: open`. Reviewers triage via the dashboard `/s/proposals` page or the `harness proposals list|show|approve|reject` CLI. The soundness-review gate runs at approve time, not at emit time; promotion writes skill files into `agents/skills/claude-code/<name>/` with `provenance: agent-proposed` + `originatingProposalId`. Pre-Phase-4 skills are backfilled with `provenance: user-authored` via `harness backfill-skill-provenance`. New token scope: `manage-proposals` (ADR 0017). Emits `proposal.created` / `proposal.approved` / `proposal.rejected` events.
+
+_Documentation & Review:_ `docs`, `review-changes`, `review-pipeline`, `feedback`, `interaction`, `interaction-schemas`, `interaction-renderer`
+
+_Roadmap & CI:_ `roadmap`, `roadmap-auto-sync`, `roadmap-file-less`, `ci`
+
+_Security & Traceability:_ `security`, `traceability`, `predict-failures`, `decay-trends`, `task-independence`, `conflict-prediction`
+
+_Agent & Persona:_ `agent`, `persona`, `agent-definitions`, `generate-slash-commands`, `blueprint`, `event-emitter`
+
+_Graph tools_ (`graph/` subdir): `compute-blast-radius`, `ask-graph`, `query-graph`, `detect-anomalies`, `ingest-source`, `find-context-for`, `search-similar`, `get-relationships`, `get-impact`
+
+_Infrastructure:_ `middleware/injection-guard.ts` — wraps tool handlers with injection scanning for tainted session enforcement
+
+**Skill Dispatch** (`packages/cli/src/skill/`): Intelligent skill recommendation and dispatch.
+
+- `recommendation-engine.ts` — Three-layer system combining hard rules, health scoring, and topological sequencing
+- `recommendation-types.ts` — Standardized health signal identifiers and recommendation result types; the health portion of `HEALTH_SIGNALS` is single-sourced from core's `HEALTH_SIGNAL_NAMES`
+- `recommendation-rules.ts` — Fallback address rules for bundled skills without declared addresses
+- `health-snapshot.ts` — Captures and caches codebase health state with checks, metrics, and freshness validation; reconciles each check's `passed` flag against active signals (via core's `reconcilePassed`) so a check can never report passing while a contradicting signal is present
+- `dispatch-types.ts` — Types for enriched dispatch context combining snapshots with change-type and domain signals
+- `dispatch-session.ts` — Session-start dispatch integration that detects HEAD delta and returns skill recommendations
+- `dispatch-engine.ts` — Enriches health snapshots with change-type and domain signals for recommendation engine
+
+**Other CLI modules:**
+
+- `templates/post-write.ts` — Persists tooling and framework metadata to `harness.config.json` after template init
+- `templates/agents-append.ts` — Appends framework-specific conventions to AGENTS.md during project setup
+- `utils/node-version.ts` — Validates Node.js version meets minimum requirement (>=22.0.0)
+- `utils/first-run.ts` — Detects and marks first run of harness via `~/.harness/.setup-complete` marker
+- `slash-commands/sync-codex.ts` — Syncs skill YAML/MD files to Codex output directory with add/update/remove tracking
+- `slash-commands/render-cursor.ts` — Renders cursor-compatible YAML frontmatter with globs and alwaysApply config
+- `slash-commands/render-codex.ts` — Renders Codex-compatible markdown and YAML files for skill distribution
+- `integrations/toml.ts` — Writes MCP server entries to TOML config files with atomic pattern preservation
+
+### Telemetry Subsystem
+
+Anonymous product analytics collection implemented across `packages/types`, `packages/core`, and `packages/cli`. Zero vendor SDK dependencies -- uses Node's built-in `fetch()` to POST events to PostHog's HTTP batch API.
+
+**Architecture:**
+
+- **Types** (`packages/types/src/telemetry.ts`): `TelemetryConfig`, `TelemetryIdentity`, `ConsentState`, `TelemetryEvent`
+- **Core** (`packages/core/src/telemetry/`):
+  - `consent.ts` -- Merges env vars (`DO_NOT_TRACK`, `HARNESS_TELEMETRY_OPTOUT`), config (`telemetry.enabled`), and `.harness/telemetry.json` identity into a `ConsentState`
+  - `install-id.ts` -- Creates/reads a persistent anonymous UUIDv4 at `.harness/.install-id`
+  - `collector.ts` -- Reads `adoption.jsonl` and formats `TelemetryEvent` payloads
+  - `transport.ts` -- HTTP POST to PostHog `/batch` with 3 retries, 5s timeout, silent failure
+- **CLI** (`packages/cli/src/commands/telemetry/`): `identify` (set/clear `.harness/telemetry.json`), `status` (display consent state, install ID, identity, env overrides)
+- **Hook** (`packages/cli/src/hooks/telemetry-reporter.js`): Stop hook that runs the full pipeline (consent check, collect, send, first-run notice)
+
+**Consent priority:** `DO_NOT_TRACK=1` > `HARNESS_TELEMETRY_OPTOUT=1` > `harness.config.json telemetry.enabled` > default (enabled)
+
+**Data sent (when enabled):** install ID, OS, Node version, harness version, skill name, duration, outcome. Identity fields (project, team, alias) only when explicitly set in `.harness/telemetry.json`.
+
+**Data NOT sent:** file paths, file contents, code, prompts, or any PII unless user opts in via identity fields.
+
+### Orchestrator Gateway API (Hermes Phase 0)
+
+`packages/orchestrator/src/server/http.ts` exposes a token-scoped, versioned HTTP API. Phases 1, 2, and 3 of the Hermes proposal have landed the auth substrate, audit log, OpenAPI artifact, `/api/v1/*` route doubling with `Deprecation` headers, three bridge-primitive endpoints, an SSE event-bus stream, and HMAC-signed webhook subscriptions with in-memory fan-out. Phase 4 will add durable webhook delivery (SQLite queue, exponential-backoff retry ladder, DLQ, drain-on-shutdown); Phase 5 will add OTLP telemetry export.
+
+**Authentication model.** Every `/api/*` request flows through `dispatchAuthedRequest`. Tokens are bearer-format: `Authorization: Bearer tok_<16-hex-id>.<base64url-secret>`. Records persist in `.harness/tokens.json` as bcryptjs-hashed secrets (cost 12) with `id`, `name`, `scopes`, `createdAt`, optional `expiresAt`, optional `tenantId`, optional `bridgeKind`. The plaintext secret is returned exactly once at creation.
+
+**Scope vocabulary** (pinned in `packages/orchestrator/src/auth/scopes.ts`): `admin`, `trigger-job`, `read-status`, `resolve-interaction`, `subscribe-webhook`, `modify-roadmap`, `read-telemetry`. `admin` is a superset. Changes to this set require an ADR. `requiredScopeForRoute(method, path)` maps every routed path to its required scope; unmapped routes default-deny (403 after audit).
+
+**Audit log.** `.harness/audit.log` is append-only JSONL written best-effort by `AuditLogger`. Every request produces exactly one line: `{timestamp, tokenId, tenantId?, route, method, status}`. Status is captured at `res.on('finish')` — the wire-final status, not whatever was set before an async handler resolved. Request payloads and response bodies are never recorded. Write failures degrade silently (the request handler must keep serving).
+
+**Versioned `/api/v1/*` surface (Phase 2).** Every legacy `/api/<name>(/...)` route is reachable at `/api/v1/<name>(/...)` via a URL rewrite inside `dispatchAuthedRequest`. A twelve-slug `V1_WRAPPABLE` set in `http.ts:413-426` (interactions, plans, analyze, analyses, roadmap-actions, dispatch-actions, local-model, local-models, maintenance, streams, sessions, chat-proxy) gates the rewrite; `/api/v1/state` is handled by an inlined shortcut. Legacy `/api/*` responses carry `Deprecation: 2027-05-14` (override via `HARNESS_DEPRECATION_DATE` env-var); `/api/v1/*` responses do not. The Deprecation gating keys off the **pre-rewrite** URL — the load-bearing invariant verified in `http-v1-aliases.test.ts`.
+
+**Bridge primitives (Phase 2).** Three operational endpoints land natively under `/api/v1/`, handlers in `packages/orchestrator/src/server/routes/v1/`:
+
+- `POST /api/v1/jobs/maintenance` (scope `trigger-job`, body `{taskId}`) — dispatches via `Orchestrator.dispatchAdHoc`; 200/404/409.
+- `POST /api/v1/interactions/{id}/resolve` (scope `resolve-interaction`) — `InteractionQueue.updateStatus(id, 'resolved')` + emits `interaction.resolved` on the event bus; 200/404/409.
+- `GET /api/v1/events` (scope `read-telemetry`) — Server-Sent Events stream of the orchestrator event bus.
+
+**SSE event bus (Phase 2, extended in Phase 3).** `GET /api/v1/events` fans **eleven** event topics out as SSE frames after Phase 3: the nine Phase 2 topics (`state_change`, `agent_event`, `interaction.created`, `interaction.resolved`, `maintenance:started`, `maintenance:completed`, `maintenance:error`, `maintenance:baseref_fallback`, `local-model:status`) plus the two webhook lifecycle topics (`webhook.subscription.created`, `webhook.subscription.deleted`). Frame format: `event: <topic>\ndata: <json>\nid: evt_<8-byte-hex>\n\n`. 15-second heartbeat comment frames; `X-Accel-Buffering: no` defeats proxy buffering; cleanup on `close`/`finish` removes every subscribed listener. `Orchestrator extends EventEmitter` and calls `this.setMaxListeners(50)` in the constructor to absorb the multi-topic subscribe-on-connect pattern (Node default is 10). `InteractionQueue.constructor(dir, emitter?)` accepts the orchestrator as the optional bus; `push()` emits `interaction.created`, `updateStatus(id, 'resolved')` emits `interaction.resolved`. WebSocket fan-out via `server.broadcastInteraction` continues to run alongside event-bus emission for legacy dashboard consumers.
+
+**Webhook subscriptions (Phase 3).** Three new routes under `/api/v1/webhooks` (`packages/orchestrator/src/server/routes/v1/webhooks.ts`): `POST /api/v1/webhooks` creates a subscription and returns the HMAC secret **exactly once**; `DELETE /api/v1/webhooks/{id}` revokes (stops fan-out within ~200ms — synchronous filter on every emit); `GET /api/v1/webhooks` lists secret-redacted subscriptions for the bearer's tokenId. All three require the `subscribe-webhook` scope. URL validation rejects `http://` URLs with 422. The three webhook path-method pairs (plus the Phase 2 bridge primitives) live in `V1_BRIDGE_ROUTES` (`packages/orchestrator/src/server/v1-bridge-routes.ts`) — single source of truth that both `buildApiRoutes()` and `scopes.ts` consume (closes Phase 2 cycle-2 DELTA-SUG-1).
+
+**HMAC signing (Phase 3).** `packages/orchestrator/src/gateway/webhooks/signer.ts` signs the verbatim request body with the subscription's secret. Header format: `X-Harness-Signature: sha256=<lowercase-hex>`. Every delivery carries four canonical headers: `X-Harness-Signature`, `X-Harness-Delivery-Id` (`dlv_<8-byte-hex>`), `X-Harness-Event-Type` (normalized dotted form), `X-Harness-Timestamp` (Unix millis). Bridges verify with a ~5-line stdlib snippet: `'sha256=' + createHmac('sha256', secret).update(rawBody).digest('hex')` plus `timingSafeEqual`. The body-verbatim contract means bridges MUST verify against raw bytes BEFORE parsing JSON — see the integration test at `packages/orchestrator/src/server/webhooks-integration.test.ts:40-51` which is the spec exit-gate proof.
+
+**Webhook secret storage (Phase 3).** `WebhookStore` (`packages/orchestrator/src/gateway/webhooks/store.ts`) persists subscriptions to `.harness/webhooks.json` with `fs.chmod(path, 0o600)` after every write — secrets stored **plaintext at rest** per ADR 0011 § "Webhook secret storage model (Phase 3)" (industry pattern at single-tenant scope: infrastructure-layer encryption via FDE, not application-layer; alternatives rejected with rationale). `.gitignore` excludes `**/.harness/webhooks.json` (added alongside `tokens.json` and `audit.log` so all three runtime secret artifacts share one block). Rotation is delete-and-recreate.
+
+**Event-bus fan-out with segment-glob filter (Phase 3).** `wireWebhookFanout` (`packages/orchestrator/src/gateway/webhooks/events.ts`) subscribes to 9 orchestrator topics and normalizes colon-separated legacy topics to dotted form (`maintenance:started` → `maintenance.started`) before running the segment-glob filter (`eventMatches` in `signer.ts:43-51`). A subscription with `events: ['maintenance.*']` therefore matches all four `maintenance:*` emits. Match semantics: split on `.`, segment count must match (no `**`), each segment is literal or `*`. **Phase 3 delivery is in-memory, best-effort, 3-second timeout, no retry, no DLQ** — Phase 4 lands the durable counterpart with the same `WebhookDelivery.deliver(sub, event)` API shape (additive swap).
+
+**Dashboard `/s/webhooks` page (Phase 3).** `packages/dashboard/src/client/pages/Webhooks.tsx` provides list / create / revoke UI. Registered as the 12th entry in `SYSTEM_PAGES` (`packages/dashboard/src/client/types/thread.ts:67`) and bound in `ThreadView.tsx:40`. Create flow renders the one-shot secret reveal panel. The page inherits the `dashboard-browser-auth-context` carry-forward from Phase 2 — Phase 4 should address or escalate.
+
+**CLI.** `harness gateway token create --name <label> --scopes <csv>` mints a new token (one-time secret reveal in stdout). `harness gateway token list` lists records with secrets redacted. `harness gateway token revoke <id>` deletes a record.
+
+**MCP tools (Phase 2 + Phase 3).** `trigger_maintenance_job` (tier-1, standard+) calls `POST /api/v1/jobs/maintenance`; `list_gateway_tokens` (tier-0, core+) calls `GET /api/v1/auth/tokens`. Phase 3 added `subscribe_webhook` at tier-1 (`packages/cli/src/mcp/tools/webhook-tools.ts`); tier assignments in `packages/cli/src/mcp/tool-tiers.ts` (`CORE_TOOL_NAMES` line 26 holds `list_gateway_tokens`; `STANDARD_EXTRA` holds `trigger_maintenance_job` and `subscribe_webhook` lines 57-58). Three separate test assertions across `server.test.ts`, `server-integration.test.ts`, and `setup-mcp.test.ts` pin the tool-count total so drift on additions or removals fails the test suite.
+
+**Dashboard.** `/s/tokens` (registered via `SYSTEM_PAGES` in `packages/dashboard/src/client/types/thread.ts`) provides a list/create/revoke UI. The dashboard does NOT mount a parallel `TokenStore`; the page calls `/api/v1/auth/*` on the dashboard server, and `packages/dashboard/src/server/orchestrator-proxy.ts` proxies the `/api/v1` prefix (in `ORCHESTRATOR_PREFIXES`) through to the orchestrator, preserving `Authorization`. Single-writer invariant on `.harness/tokens.json`: only the orchestrator writes it. See "Route Ownership" in [`docs/knowledge/orchestrator/gateway-api.md`](docs/knowledge/orchestrator/gateway-api.md).
+
+**Compatibility signals.**
+
+- `HARNESS_API_TOKEN` env-var: still authenticates, as a synthetic admin token (backward-compat invariant).
+- `X-Harness-Auth-Mode: unauth-dev` response header: present on every reply when the orchestrator is in localhost-dev fallback (tokens.json empty AND `HARNESS_API_TOKEN` unset). A one-time `console.warn` fires on the first request in this mode per process.
+- `Deprecation: <ISO-date>` response header: present on every response from a legacy `/api/<name>` route (not on `/api/v1/<name>`). Default `2027-05-14`; override via `HARNESS_DEPRECATION_DATE`.
+
+**OpenAPI artifact.** `docs/api/openapi.yaml` is generated from Zod schemas via `@asteasolutions/zod-to-openapi` (orchestrator npm script `openapi:generate`). Phase 3 extended coverage to **18 paths** (3 auth + 3 bridge + 10 documented legacy aliases + 2 webhook routes; `/api/v1/webhooks` is POST+GET on one path, `/api/v1/webhooks/{id}` is DELETE on another). Version bumped to v0.3.0. CI workflow `.github/workflows/openapi-drift-check.yml` regenerates the artifact on every PR and fails on drift; the emitter is byte-identical across re-runs.
+
+See [`docs/knowledge/orchestrator/gateway-api.md`](docs/knowledge/orchestrator/gateway-api.md) for the gateway API contract business-process node, [`docs/knowledge/orchestrator/webhook-fanout.md`](docs/knowledge/orchestrator/webhook-fanout.md) for the Phase 3 webhook fan-out pipeline (subscription lifecycle, segment-glob filter, delivery worker, Phase 4 extension points), and [ADR 0011](docs/knowledge/decisions/0011-orchestrator-gateway-api-contract.md) (status: in-progress, promotion to `accepted` deferred to Phase 4 + Phase 5) for the contract decisions including the "Webhook secret storage model (Phase 3)" addendum.
+
+### Notifications (Hermes Phase 3)
+
+`packages/orchestrator/src/notifications/` ships an in-process `NotificationSink` abstraction layered on top of the Phase 0 webhook fanout. Sinks subscribe to the orchestrator event bus (`wireNotificationSinks` in `events.ts`, structurally parallel to `wireWebhookFanout`) and deliver each filtered event directly to a destination (Slack incoming webhook for v1) with optional `wrap_response` envelope formatting. Failures emit `notification.delivery.failed` for operator visibility; sinks never retry (durable delivery is the Phase 0 webhook fanout's job).
+
+**Sink config** lives in `harness.config.json` under `notifications.sinks[]`:
+
+```jsonc
+{
+  "notifications": {
+    "sinks": [
+      {
+        "id": "team-alerts",
+        "kind": "slack",
+        "events": ["maintenance.error", "interaction.created"],
+        "wrap_response": true,
+        "config": { "webhookUrlEnv": "HARNESS_SLACK_WEBHOOK_URL" },
+      },
+    ],
+  },
+}
+```
+
+`webhookUrlEnv` names the env var holding the Slack incoming-webhook URL (must match `https://hooks.slack.com/`); the URL never lands in the config file. `wrap_response: true` wraps each `GatewayEvent` into a `NotificationEnvelope` (six fields: `title`, `summary`, `severity`, optional `actions[]`, `permalink?`, `correlationId?`) before delivery; `false` delivers the raw event.
+
+**CLI.** `harness notifications test <sink-id>` synthesizes a `notification.test` event and routes it through the named sink. Used after first-config to verify the env var is set and the URL works; also the Phase 3 phase-readiness gate for "external test consumer exists."
+
+**Layer compliance.** Contract types in `packages/types/src/notifications.ts`; concrete sinks in `packages/orchestrator/src/notifications/`; config loader in `packages/core/src/notifications/config-loader.ts`; CLI in `packages/cli/src/commands/notifications/`. No cross-layer leak (orchestrator never imports core/cli; core's loader uses only types).
+
+See [`docs/knowledge/orchestrator/notification-sinks.md`](docs/knowledge/orchestrator/notification-sinks.md) for the business-process node and [ADR 0013](docs/knowledge/decisions/0013-notification-sink-interface.md) for the contract decisions.
+
+### Doctor Hardening (Hermes Phase 3 / A7)
+
+`harness doctor` runs four new check classes alongside the legacy presence checks (Node, slash commands, MCP, integrations registry). All are synchronous and file-IO only; outbound HTTP probes are explicitly out of scope per [ADR 0014](docs/knowledge/decisions/0014-doctor-live-state-checks.md).
+
+- **`checkLivePings`** — env-var presence + shape for `ANTHROPIC_API_KEY` (prefix `sk-ant-`), `OPENAI_API_KEY` (prefix `sk-`), `GITHUB_TOKEN` (length ≥ 30). Absent → `info`; malformed → `warn`; well-shaped → `pass`.
+- **`checkHookValidity`** — for each file under `.harness/hooks/`: JSON parse or shebang detection. Empty file → `fail`; missing shebang → `warn`; parses OK → `pass`. Directory absent → single `info`.
+- **`checkBaselineFreshness`** — mtime check for `.harness/arch/baselines.json`, `benchmark-baselines.json`, `coverage-baselines.json`. < 30 days → `pass`; 30–89 → `warn`; ≥ 90 → `fail`; absent → `info`. Fix hints point at the canonical refresh commands.
+- **`checkSessionCorruption`** — parse the five most-recent `session-summary.json` files under `.harness/sessions/`. All parse → `pass`; some malformed → `warn`; all malformed → `fail`; no sessions → `info`.
+
+`runDoctor(cwd)` remains synchronous and the JSON output shape is additive (existing check names unchanged; new checks add `live-pings-*`, `hook-validity-*`, `baseline-freshness-*`, `session-corruption` entries). See [`docs/knowledge/cli/doctor-hardening.md`](docs/knowledge/cli/doctor-hardening.md).
+
+### Skill Proposals (Hermes Phase 4)
+
+Agents can emit skill candidates — either a fully-formed new skill or a unified-diff refinement against an existing one — through the `emit_skill_proposal` MCP tool (`packages/cli/src/mcp/tools/skill-proposal.ts`, tier `standard`). The tool writes a strict-validated JSON record to `.harness/proposals/<id>.json` and returns immediately; agents are never blocked on review.
+
+**Storage + schema.** Proposals are validated through `SkillProposalSchema` (`packages/types/src/proposals.ts`). The schema enforces a kind ↔ content invariant: `new-skill` requires `skillYaml` + `skillMd`; `refinement` requires `targetSkill` + unified-diff `diff`. Status transitions are `open → gate-running | gate-failed → approved | rejected`.
+
+> As of LMLM Phase 5 (ADR 0058) the queue carries a discriminated `kind: 'skill' | 'model'` (`ProposalSchema`): skill proposals nest the old enum under `skillKind`, and model proposals (add/swap/evict) flow through the **same** store, routes, and events. Legacy records read-migrate transparently. See [`docs/knowledge/orchestrator/local-model-lifecycle.md`](docs/knowledge/orchestrator/local-model-lifecycle.md).
+
+**Soundness gate.** Reviewers trigger `POST /api/v1/proposals/<id>/run-gate` (UI button or `harness proposals approve` indirectly). The gate (`packages/orchestrator/src/proposals/gate.ts`) runs mechanical structural checks today — kebab-case name, parseable skill.yaml, SKILL.md size bounds, unified-diff well-formedness — and persists findings. A future `harness:soundness-review --mode skill` follow-up replaces the mechanical checks without changing the integration surface (ADR 0016).
+
+**Promotion.** With a clean gate fresh within 24h, `POST /api/v1/proposals/<id>/approve` invokes `promote()` (`packages/orchestrator/src/proposals/promote.ts`) which writes `agents/skills/claude-code/<name>/{skill.yaml,SKILL.md}` with `provenance: agent-proposed` and `originatingProposalId: <id>`. Refinements stamp provenance on the existing target after verifying the reviewer applied the diff. The slash-command generator regenerates per-host plugin manifests on next run.
+
+**Provenance.** Every skill now carries `provenance: community | agent-proposed | user-authored`. The one-shot `proposal-provenance-backfill` maintenance task (`harness backfill-skill-provenance`) stamps `user-authored` on every catalog skill missing the field; idempotent re-runs are no-ops. Scheduled cron is Feb 31 so the scheduler never fires it; operators trigger via dashboard or CLI.
+
+**Surfaces.** MCP tool `emit_skill_proposal`. CLI `harness proposals list|show|approve|reject` and `harness backfill-skill-provenance`. Dashboard page `/s/proposals` (`packages/dashboard/src/client/pages/Proposals.tsx`). Seven gateway routes under `/api/v1/proposals/*` registered in `V1_BRIDGE_ROUTES`; reads use `read-status`, mutations require the new `manage-proposals` scope (ADR 0017). Events `proposal.created`, `proposal.approved`, `proposal.rejected` fan out via the Phase 0 webhook bus and Phase 3 notification sinks; envelope derivers in `notifications/envelope.ts` render them with appropriate severities.
+
+See [`docs/knowledge/cli/skill-proposals.md`](docs/knowledge/cli/skill-proposals.md) and [`docs/knowledge/cli/skill-provenance.md`](docs/knowledge/cli/skill-provenance.md). ADRs: [0016](docs/knowledge/decisions/0016-skill-proposal-workflow.md), [0017](docs/knowledge/decisions/0017-manage-proposals-scope.md).
+
+### LMLM Operator Surface (Phase 7)
+
+Phase 7 exposes the local-model pool, hardware, recommendations, and model-proposal queue over the orchestrator's HTTP + WebSocket + notification-sink surfaces so CLI, dashboard, and Slack operators all read one source of truth (ADR [0060](docs/knowledge/decisions/0060-lmlm-operator-surfaces-and-dispatch-safe-eviction.md)).
+
+**Read routes.** Four additive GETs dispatched from `handleV1LocalModelsRoute` (`packages/orchestrator/src/server/routes/v1/local-models.ts`), each `503 { error: 'LMLM disabled' }` when its accessor is null and registered in `V1_BRIDGE_ROUTES` (`scope: 'read-status'`) so the `/api/v1` rewrite shim does not misroute them to the legacy status handler:
+
+- `GET /api/v1/local-models/hardware` — current `HardwareProfile`.
+- `GET /api/v1/local-models/pool` — `PoolState` view including any `pendingEviction: true` entries (S1 overlay).
+- `GET /api/v1/local-models/recommendations?top=N&profile=general|coding|reasoning` — `RankedModel[]` (validates `top`/`profile` → `400`; `[]` until the Phase 2 candidate parser lands; `profile` is not yet a ranking input).
+- `GET /api/v1/local-models/proposals` — kind-filtered (`kind: 'model'`, `status: 'open'`) feed. Model approve/reject stays on the **shared** `/api/v1/proposals/:id/{approve,reject}` route — no duplicate handler (D-Q2).
+
+**WS + sinks.** The model handlers emit `local-models:proposal` and `local-models:pool` on the orchestrator bus; `OrchestratorServer.wireEvents()` fans both out to every `/ws` client (detached in `stop()`). A `local-models.proposal` notification envelope (`notifications/envelope.ts`) varies title/severity by `data.status` (`created`/`rejected`/`failed_target_missing`). The scheduler's `emitProposal` seam fires `local-models:proposal { status: 'created' }` on new-proposal creation.
+
+**S1 dispatch-safe eviction.** An approved swap/evict of a model that might be serving a request is **deferred**, not applied mid-dispatch. `onApproveModelProposal` consults an injectable `isModelInUse(ollamaName)` probe before evicting; if in use it calls `PoolManager.markPendingEviction` (a transient, never-persisted overlay), emits `local-models:pool { phase: 'evict_deferred' }`, and skips the evict — the install for a swap has already applied, so the pool transiently holds both. `Orchestrator.drainDeferredEvictions()` fires best-effort from the run-completion path (`emitWorkerExit`), completing any deferred eviction the probe now reports idle and emitting `evict_completed`. The production probe (`Orchestrator.isLocalModelInUse`) is **agent-run-coarse** — `state.running.size > 0` AND the name is a currently-resolved/last-detected local model — so it may over-defer (a safe failure); a per-request signal is a documented deferred gap.
+
+### Dashboard Package
+
+`packages/dashboard/` is a React + Hono full-stack app providing a web-based project health dashboard.
+
+**Client** (`src/client/`): React SPA with 13 pages (Signals, Adoption, Analyze, Attention, DecayTrends, Graph, Health, Impact, Maintenance, Orchestrator, Roadmap, Streams, Traceability), reusable components (SignalCard, KpiCard, GanttChart, DependencyGraph, BlastRadiusGraph, ProgressChart, ActionButton, StaleIndicator, Layout), and SSE-based live data hooks (`useSSE`, `useApi`). Signals is the default landing panel — `/` redirects to `/s/signals` (Spec 534); chat threads remain reachable at `/t/:threadId`.
+
+**Server** (`src/server/`): Hono HTTP server with SSE connection manager running a shared polling loop. Routes: signals, actions, actions-claim-file-less, adoption, ci, decay-trends, graph, health, health-check, impact, overview, roadmap, sse, traceability. Data gatherers: signals, adoption, anomalies, arch, blast-radius, ci, decay-trends, entry-points, graph, health, perf, roadmap, security, traceability.
+
+### Orchestrator Intelligence Integration
+
+The orchestrator depends on `@harness-engineering/intelligence` for persona-aware dispatch. The `IntelligencePipelineRunner` (`packages/orchestrator/src/intelligence/pipeline-runner.ts`) orchestrates: spec enrichment (SEL), complexity scoring (CML), pre-execution simulation (PESL), analysis archiving, and auto-publishing. It imports `weightedRecommendPersona` and `refreshProfiles` from the intelligence package to route issues to the best-fit persona based on specialization profiles. Execution outcomes feed back into effectiveness scoring to improve future routing.
+
+### Orchestrator Maintenance Tasks
+
+`packages/orchestrator/src/maintenance/task-registry.ts` defines 22 built-in scheduled tasks across four execution strategies:
+
+- **mechanical-ai (7):** `arch-violations`, `dep-violations`, `doc-drift`, `security-findings`, `entropy`, `traceability`, `cross-check` — run a check command first, dispatch an AI agent only if fixable findings exist.
+- **pure-ai (4):** `dead-code`, `dependency-health`, `hotspot-remediation`, `security-review` — always dispatch an AI agent on schedule.
+- **report-only (7):** `perf-check`, `decay-trends`, `project-health`, `stale-constraints`, `graph-refresh`, `product-pulse`, `compound-candidates` — run a command and record metrics; never create branches or PRs. Honors a JSON status contract (`{status, candidatesFound?, error?, reason?}`) emitted by the new `--non-interactive` CLIs; legacy free-form output falls through to `success`.
+  - `product-pulse` (daily 8am, gated on `pulse.enabled`) — generates `docs/pulse-reports/` via `harness pulse run --non-interactive`.
+  - `compound-candidates` (Mondays 9am) — surfaces undocumented learnings into `docs/solutions/.candidates/` via `harness compound scan-candidates --non-interactive`. Scheduled at 9am rather than 6am to avoid collision with the existing Monday 6am block (cross-check, perf-check, traceability).
+- **housekeeping (4):** `session-cleanup`, `perf-baselines`, `main-sync`, `proposal-provenance-backfill` (one-shot, manual trigger via Feb 31 cron) — run a mechanical command directly, no AI, no PR.
+
+The dashboard `Maintenance` page renders a candidate-count badge on `compound-candidates` history rows when `findings > 0`.
+
+#### Custom Maintenance Tasks (Hermes Phase 2)
+
+`MaintenanceConfig.customTasks: Record<string, CustomTaskDefinition>` extends the scheduler beyond the 21 built-ins (see [docs/knowledge/orchestrator/custom-maintenance-jobs.md](docs/knowledge/orchestrator/custom-maintenance-jobs.md) and ADR [0015](docs/knowledge/decisions/0015-hermes-phase-2-custom-maintenance-jobs.md)). Custom tasks honor the same 4-task-type taxonomy and gain five optional fields:
+
+- `checkScript: { path, args?, parseStdoutJson?, timeoutMs? }` — arbitrary executable (mutually-exclusive with `checkCommand`). The runner parses the last non-empty stdout line as a JSON envelope `{status: 'ok'|'findings'|'skip'|'error', findings?, wakeAgent?, message?, outputs?}`; falls back to the heuristic regex on absence.
+- `contextFrom: string[]` — upstream task IDs whose latest persisted output is injected into the agent prompt as `## Upstream context`. Cycles rejected at config-load by `validateCustomTasks`; stale entries (older than `contextFromMaxAgeMinutes`, default 1440) get a `[stale: omitted]` marker.
+- `inlineSkills: string[]` + `inlineSkillsBudgetTokens` (default 8000) — skill markdown bodies inlined under `## Reference skills` with a char-count budget that warns-then-truncates skill-granularly.
+- `outputRetention: { runs?, maxAgeDays? }` — overrides the default 50-run / 30-day retention bounds.
+
+`RunResult.origin: RunOrigin` is a discriminated provenance tag (`'cron' | 'cli' | { kind: 'api', tokenName } | { kind: 'chain', upstreamTaskId }`) set by the entry point and never configurable. `TaskOutputStore` persists one JSON file per run at `.harness/maintenance/<task-id>/outputs/<iso>.json` (one-file-per-run trades inode count for clarity; retention-bounded).
+
+CLI: `harness maintenance list` shows the resolved task list (built-in + custom); `harness maintenance show <task-id> --limit N` reads from the output store. `harness maintenance run [taskId...]` (maintenance-pipeline Phase 3) runs an on-demand, report-first sweep of overdue sweep-eligible tasks through the same `TaskRunner` the cron scheduler uses — no orchestrator, gateway, or `ClaimManager` constructed (ADR [0050](docs/knowledge/decisions/0050-report-first-on-demand-maintenance.md)). Default is overdue + report mode (parallel, no PRs); `--all` / `--only` / `--skip` scope selection, `--fix` threads fix mode (sequential) and dispatches the real `createAgentDispatcher` (#679) when an `agent.backends` backend is configured, otherwise skips with an honest `NO_BACKEND_FIX_WARNING` and `fixed: 0`, `--json` emits the consolidated report also written to `.harness/maintenance/last-run-summary.json`. Exit codes: `0` completed (findings are not failures), `1` a task failed to execute, `2` invalid invocation. The `/api/v1/jobs/maintenance/{taskId}/trigger` API remains deferred to a follow-up alongside the Phase 0 Gateway API contracts.
+
+#### Pre-launch OSV Malware Guard (Hermes Phase 2 / A8)
+
+`harness mcp-guard check [--strict] [--json]` reads `.mcp.json`, iterates `mcpServers`, extracts `npx <pkg>[@<version>]` arguments, and queries OSV.dev for `MAL-*` advisories. Exits `2` on any malicious match — suitable as a `pre-mcp-launch` hook from host plugin manifests. Default posture is fail-open (network failures warn-and-continue); `--strict` reverses to fail-closed. The advisory cache lives at `.harness/cache/osv/<ecosystem>-<name>@<version>.json` with a 24h TTL (`harness mcp-guard cache clear` invalidates). The client is exported from `@harness-engineering/core` as `createOsvClient`. See [docs/knowledge/cli/pre-launch-osv-guard.md](docs/knowledge/cli/pre-launch-osv-guard.md).
+
+#### Disk Hygiene (Hermes Phase 2 / A9)
+
+`harness cleanup-sessions` (no flags) continues to sweep only `.harness/sessions/` at the 24h TTL. New flags `--all` / `--include <list>` / `--exclude <list>` extend the sweep across registered targets: `sessions` (24h), `cache` (7d), `maintenance` (30d), `dashboard-state` (14d), `snapshots` (14d), `analyzer-output` (7d). Per-target TTLs are overridable via the new `cleanup.ttlHours: Record<string, number>` config section. Unknown subdirectories of `.harness/` are preserved.
+
+### Solutions and Pulse Reports
+
+Two artifact roots support the feedback-loops feature:
+
+- `docs/solutions/<track>/<category>/<slug>.md` — solved-problem playbooks written
+  via `/harness:compound`. Tracks: `bug-track/`, `knowledge-track/`. See
+  `docs/conventions/compound-vs-knowledge-pipeline.md` for category guidance.
+- `docs/pulse-reports/YYYY-MM-DD_HH-MM.md` — daily single-page pulse reports
+  written by the `product-pulse` maintenance task. Read these when prioritizing.
+
+The boundary with `harness-knowledge-pipeline` is documented in
+ADR-0023 (`docs/knowledge/decisions/0023-compound-vs-knowledge-pipeline-boundary.md`):
+compound captures post-mortem playbooks; the pipeline extracts structural facts
+from code. Both `product-pulse` and `compound-candidates` are registered as
+`report-only` maintenance tasks (see the orchestrator maintenance section).
+
+### Graph Subsystems
+
+In addition to the core graph store and ContextQL engine:
+
+- `query/Traceability.ts` — Traces requirement-to-code/test coverage with confidence levels and EARS pattern detection
+- `ingest/RequirementIngestor.ts` — Ingests requirements from spec markdown sections (Observable Truths, Success Criteria, Acceptance Criteria)
+- `blast-radius/CascadeSimulator.ts` — Probability-weighted BFS simulating cascading failure propagation from a source node
+- `blast-radius/CompositeProbabilityStrategy.ts` — Blends edge type weight (50%), change frequency (30%), and coupling strength (20%) for failure propagation probability
+- `benchmarks/queries.bench.ts` — Vitest benchmarks for graph queries with medium (100-node) synthetic fixtures
+
+### Types Package Detail
+
+Beyond the core Result, Config, and ValidationError types:
+
+- `workflow.ts` — Types for multi-skill workflows with step dependencies, gates, and outcomes
+- `usage.ts` — UsageRecord composition of TokenUsage with cache tokens, model, and cost tracking
+- `tracker-sync.ts` — ExternalTicket/ExternalTicketState types for bidirectional tracker integration
+- `session-state.ts` — SessionSectionName union type and session entry lifecycle
+- `ci.ts` — CICheckName, CICheckStatus, and CICheckIssue types for CI check reporting
+
+### Unified Knowledge Graph
+
+The `packages/graph` package provides a graph-based context system that unifies code structure, organizational knowledge, and external data into a single queryable model. It powers context assembly, entropy detection, constraint enforcement, and skill execution across the entire toolkit. Key components: LokiJS graph store, ContextQL query engine, FusionLayer (keyword + semantic search), code/git/knowledge ingestion pipelines, CascadeSimulator (probabilistic failure propagation via `compute_blast_radius` MCP tool), and 4 external connectors (Jira, Slack, Confluence, CI).
+
+### Integration Phase
+
+The integration phase (INTEGRATE) is a verification gate between Verification and Code Review in the standard workflow. It confirms that planned integration tasks -- wiring, knowledge materialization, and documentation updates -- actually completed after execution.
+
+**Position in workflow:** `VERIFY -> INTEGRATE -> REVIEW`
+
+**Three sub-phases:**
+
+- **WIRE** (all tiers): Verifies barrel exports are current (`pnpm run generate:barrels:check`), `harness validate` passes, and entry points are reachable. Always runs, even for small changes.
+- **MATERIALIZE** (medium + large tiers): Verifies ADRs are written for architectural decisions, knowledge graph is enriched with decision nodes, and documentation tasks are complete.
+- **UPDATE** (medium + large tiers): Verifies roadmap sync, changelog entries, and spec cross-references.
+
+**Tiered rigor model:**
+
+| Tier       | Signal                                            | Integration Requirements                                               |
+| ---------- | ------------------------------------------------- | ---------------------------------------------------------------------- |
+| **small**  | Bug fix, config change, < 3 files, no new exports | WIRE only (default checks always run)                                  |
+| **medium** | New feature, new exports, 3-15 files              | WIRE + project updates (roadmap, changelog, graph enrichment)          |
+| **large**  | New package, new skill, architectural change      | WIRE + project updates + knowledge materialization (ADRs, doc updates) |
+
+The tier is estimated during planning and confirmed from execution results. The effective tier is `max(planned, derived)` -- the higher tier always wins.
+
+**Skill:** `harness-integration` (Tier 1 workflow skill). Invoked via `/harness:integration` or dispatched by autopilot at the INTEGRATE state.
+
+**ADRs:** Architectural decisions are recorded as markdown files in `docs/knowledge/decisions/` using sequential 4-digit numbering (e.g., `0001-decision-name.md`). ADRs are ingested by the knowledge pipeline as queryable `decision` graph nodes.
+
+### Skill Tier System
+
+Skills are classified into three tiers to preserve context. Only Tier 1 and Tier 2 skills are registered as slash commands; Tier 3 skills are discoverable via the `search_skills` MCP tool.
+
+- **Tier 1 (Workflow, 14 skills):** Always-loaded slash commands for core workflow — brainstorming, planning, execution, autopilot, tdd, debugging, refactoring, skill-authoring, onboarding, initialize-project, add-component, harness-integration, harness-router, initialize-test-suite-project.
+- **Tier 2 (Maintenance, 26 skills):** Always-loaded slash commands for project health — integrity, verify, code-review, release-readiness, docs-pipeline, codebase-cleanup, enforce-architecture, detect-doc-drift, cleanup-dead-code, dependency-health, hotspot-detector, security-scan, perf, impact-analysis, test-advisor, soundness-review, architecture-advisor, roadmap, verification, supply-chain-audit, roadmap-pilot, harness-compound, harness-knowledge-pipeline, harness-pulse, maintenance-pipeline, pre-merge-brief.
+- **Tier 3 (Catalog, 697 skills):** Discoverable on demand via `search_skills`. Includes domain skills (API design, database, deployment, containerization, etc.), design skills, i18n, and specialized testing.
+- **Internal (6 skills):** Dependency-only, never surfaced. Invoked by other skills as part of pipelines.
+
+The `search_skills` MCP tool (`packages/cli/src/mcp/tools/search-skills.ts`) queries a merged index of bundled + community skills. The index uses hash-based staleness detection. An intelligent dispatcher (`packages/cli/src/skill/dispatcher.ts`) suggests relevant Tier 3 skills when Tier 1 workflow skills start. Stack profile detection (`packages/cli/src/skill/stack-profile.ts`) identifies project technologies to bias suggestions. Configuration overrides in `harness.config.json` support `skills.alwaysSuggest`, `skills.neverSuggest`, and `skills.tierOverrides`.
+
+### Community Skill Registry
+
+The `@harness-skills/*` npm namespace enables publishing, discovering, and installing community skills. Key commands: `harness install`, `harness uninstall`, `harness skill search`, `harness skill create`, `harness skill publish`, `harness skill update`. Supports local installs (`--from ./path`), private registries (`--registry <url>`), and `.npmrc` auth tokens. Skills are pure content packages (no runtime code). Discovery priority: project-local > community > bundled. GitHub- and npm-sourced providers record source provenance in the lockfile; a passive background check nudges (never auto-applies) when an upstream provider changes, and `harness skill update [--check]` applies the refresh under per-provider consent. See [`docs/knowledge/cli/skill-freshness.md`](./docs/knowledge/cli/skill-freshness.md).
+
+Implementation in `packages/cli/src/registry/` and `packages/cli/src/commands/skill/`. See the [Skill Marketplace Guide](./docs/guides/skill-marketplace.md) for full usage, architecture, and examples.
+
+### Post-Ship Rollback (circuit breaker)
+
+`harness:rollback` is the post-ship circuit breaker that closes the Operations enforcement edge (`docs/knowledge/skills/sdlc-coverage-and-agentic-trajectory.md`). When a merged PR crosses a tracked signal threshold (live) or fails post-merge outcome-eval (dark until #31), it classifies revert-readiness and opens a **full-context revert PR** — **v1 is propose-only; it never auto-merges** (ADR [0063](docs/knowledge/decisions/0063-post-ship-rollback-trust-model.md)). CLI: `harness rollback evaluate --pr <n> [--trigger signal|eval] [--dry-run]` and `harness rollback sweep` (the signal arm). Core classification (`classifyRevert`, `RollbackDecision`) lives in `packages/core/src/rollback/`; the command, real git/gh adapter, composer, and `rollback_event` breadcrumb in `packages/cli/src/rollback/`. Revert-readiness = a clean in-memory `git merge-tree` revert **and** no dependent later merge; blast-radius and migration risk are PR-body context, never gates. The scheduled/post-merge workflow `.github/workflows/rollback-propose.yml` is propose-only (`contents: read` + `pull-requests: write`, no self-approving PAT, concurrency-serialized). Config lives under `rollback` in `harness.config.json` (`signals` map + `evalTrigger.enabled`, default `false`).
+
+### Project Roadmap
+
+The project roadmap lives at `docs/roadmap.md` and tracks features across milestones with statuses (`backlog`, `planned`, `in-progress`, `done`, `blocked`). Core implementation in `packages/core/src/roadmap/` provides `parseRoadmap`, `serializeRoadmap`, and `syncRoadmap`. The `manage_roadmap` MCP tool (`packages/cli/src/mcp/tools/roadmap.ts`) exposes CRUD operations: `show`, `add`, `update`, `remove`, `query`, `sync`. The `harness-roadmap` skill provides interactive workflows: `--create`, `--add`, `--sync`, `--edit`, `--query`. Roadmap sync respects a "human-always-wins" rule — manually edited statuses are preserved unless `force_sync` is set. The orchestrator adapter (`packages/orchestrator/src/tracker/adapters/roadmap.ts`) maps roadmap features to the internal Issue model for agent orchestration.
+
+**External tracker sync** — Bidirectional sync between `roadmap.md` and GitHub Issues via `TrackerSyncAdapter` (`packages/core/src/roadmap/tracker-sync.ts`). The `GitHubIssuesSyncAdapter` (`packages/core/src/roadmap/adapters/github-issues.ts`) uses label-based status disambiguation for the open/closed limitation. The sync engine (`packages/core/src/roadmap/sync-engine.ts`) provides `syncToExternal` (push planning fields), `syncFromExternal` (pull execution fields with directional guard via `status-rank.ts`), and `fullSync` (mutex-serialized read-push-pull-write cycle). Configuration via `roadmap.tracker` in `harness.config.json` (validated by `TrackerConfigSchema` in `packages/cli/src/config/schema.ts`). Auto-sync fires on 6 state transitions via `triggerExternalSync` in `packages/cli/src/mcp/tools/roadmap-auto-sync.ts`.
+
+**CLI entry point + CI-safety guards** — `harness roadmap sync` (`packages/cli/src/commands/roadmap/sync.ts`) exposes `fullSync` to CI, which previously could only ever flip rows to `done` via `roadmap reconcile`. It is **dry-run by default** (`--apply` to write) and carries two guards threaded through `ExternalSyncOptions` → `syncToExternal` → adapter `updateTicket`: `--no-create` (`allowCreate: false`, reports each skipped row instead of creating a ticket) and `--no-state-change` (`syncIssueState: false`, omits the issue `state` field from every patch so labels converge but nothing is closed or reopened). Both `GitHubIssuesSyncAdapter.updateTicket` and `GitHubIssuesTrackerAdapter.buildIssuePatchBody` honour the state guard. Every run reports its **denominator** (rows compared, tickets fetched) and exits `ExitCode.ZERO_DENOMINATOR` (3) when it examined nothing — an abstention must never read as a pass. Intended CI pattern: nightly `harness roadmap sync --apply --no-create --no-state-change` for label convergence, with closure left to the PR-merge auto-done path. See [`docs/guides/roadmap-sync.md`](docs/guides/roadmap-sync.md) §"Running Sync from the CLI".
+
+**File-less mode (opt-in)** — Setting `roadmap.mode: "file-less"` in `harness.config.json` makes the configured GitHub Issues tracker the canonical roadmap; `docs/roadmap.md` must not exist. All consumers (CLI, dashboard, MCP `manage_roadmap`, orchestrator, `harness:roadmap-pilot`) branch on the mode flag at runtime. Migrate with `harness roadmap migrate --to=file-less`. See `docs/guides/roadmap-sync.md` §"File-less mode" and ADRs 0008–0010 for the design rationale. See [docs/changes/roadmap-tracker-only/migration.md](docs/changes/roadmap-tracker-only/migration.md) for the operator walkthrough.
+
+**Sharded mode (default for new projects)** — Storage layout is an axis orthogonal to file-backed/file-less mode, auto-detected by `detectRoadmapStorageMode` (`packages/core/src/roadmap/load-mode.ts`): when `docs/roadmap.d/` exists the roadmap is **sharded**, otherwise **monolith**. In sharded mode the per-row shards `docs/roadmap.d/<slug>.md` (plus `_meta.md`) are canonical and `docs/roadmap.md` is a generated `merge=ours` aggregate; every harness tool reads/writes through `RoadmapStore` (`resolveRoadmapStore`), never the aggregate directly — the **read-source invariant R** (ADR [0050](docs/knowledge/decisions/0050-roadmap-read-source-invariant.md), enforced by `validation/roadmap-read-source.ts`). `harness init` scaffolds a sharded roadmap for **new** projects; existing adopters opt in via `harness roadmap shard` (reverse with `harness roadmap unshard`), and `harness roadmap regen` regenerates the aggregate. **Auto-done on merge:** a merged PR closing a roadmap-linked issue flips exactly that shard to `done` via `External-ID` — **agents stop hand-marking rows done** (ADR [0051](docs/knowledge/decisions/0051-slug-identity-external-id-sync-key.md); knowledge [`merge-triggered-auto-done.md`](docs/knowledge/roadmap/merge-triggered-auto-done.md)). Freshness is kept by the husky `pre-commit`/`post-merge` regen hooks plus the per-clone one-time `git config merge.ours.driver true` (the `.gitattributes docs/roadmap.md merge=ours` entry is inert without it; `harness validate` warns clones that have not run it, and also warns when the committed aggregate has drifted from the shards). See knowledge [`roadmap-store-abstraction.md`](docs/knowledge/roadmap/roadmap-store-abstraction.md) and the adoption guide [`docs/guides/roadmap-sharding.md`](docs/guides/roadmap-sharding.md).
+
+**Auto-pick pilot** — The `harness-roadmap-pilot` skill (`agents/skills/claude-code/harness-roadmap-pilot/`) selects the next highest-impact unblocked item using a two-tier sort: explicit priority first (P0–P3), then weighted score (position 0.5, dependents 0.3, affinity 0.2). Scoring algorithm and `assignFeature` function in `packages/core/src/roadmap/pilot-scoring.ts`. Routes to `harness:brainstorming` (no spec) or `harness:autopilot` (spec exists). Assignment updates the feature's `Assignee` field, appends to the `## Assignment History` section, and syncs to the external tracker.
+
+### Monorepo Structure Benefits
+
+- **Shared Dependencies** - One pnpm-lock.yaml ensures consistency
+- **Unified Tooling** - Same linting, formatting, and test configuration
+- **Coordinated Changes** - Easy to update multiple packages together
+- **Turborepo Caching** - Faster builds with smart caching
+
+### Documentation-First Approach
+
+All architectural decisions must be documented:
+
+1. **Design Documents** - Explain the "why" before implementing
+2. **Architecture Decisions** - Record key choices in `/docs/standard/`
+3. **Implementation Plans** - Track execution in `/docs/plans/`
+4. **Specifications** - Detailed technical specs in `/docs/changes/`
+5. **Guides** - How-to documentation for common tasks
+
+This creates a permanent record that AI agents can access and understand.
+
+## Where to Find Things
+
+### Documentation Structure
+
+- **[docs/standard/](./docs/standard/)** - Core Harness Engineering standard and principles
+  - `index.md` - Overview of the standard
+  - `principles.md` - Deep dive into the 7 core principles
+  - `implementation.md` - Step-by-step adoption guide
+  - `kpis.md` - Metrics for measuring success
+
+- **[docs/guides/](./docs/guides/)** - How-to guides and tutorials
+  - `getting-started.md` - Quick start guide for new projects
+  - `best-practices.md` - Recommended patterns and practices
+  - Additional guides for specific topics
+
+- **[docs/reference/](./docs/reference/)** - Technical reference documentation
+  - Configuration reference
+  - CLI documentation
+  - API reference
+
+- **[docs/api/](./docs/api/)** - Handcrafted API documentation for packages (see also `docs/reference/api/` for auto-generated source indexes)
+
+- **[docs/changes/](./docs/changes/)** - Detailed technical specifications for features
+- **[docs/plans/](./docs/plans/)** - Implementation and execution plans
+- **[docs/architecture/](./docs/architecture/)** - Architecture analysis and diagrams
+- **[docs/knowledge/](./docs/knowledge/)** - ADRs (`decisions/`) and package-specific knowledge docs
+- **[docs/research/](./docs/research/)** - Framework research and analysis
+- **[docs/conventions/](./docs/conventions/)** - Format conventions (markdown interaction patterns)
+- **[docs/guidelines/](./docs/guidelines/)** - Decision guides (e.g., MCP vs CLI)
+- **[docs/solutions/](./docs/solutions/)** - Solved-problem playbooks
+- **[docs/blueprint/](./docs/blueprint/)** - Blueprint HTML artifacts
+
+### Key Documentation
+
+When working on this project, agents should prioritize reading:
+
+1. **First**: [Harness Engineering Standard](./docs/standard/index.md) - Understanding the vision
+2. **Second**: [Seven Core Principles](./docs/standard/principles.md) - Understanding how it works
+3. **Third**: [Getting Started Guide](./docs/guides/getting-started.md) - Practical setup
+4. **Reference**: [Implementation Guide](./docs/standard/implementation.md) - Detailed guidance
+5. **Context**: This file (AGENTS.md) - Navigation and quick reference
+
+## Conventions
+
+### Code Style
+
+- **TypeScript Strict Mode** - All code compiles with `strict: true`
+- **ESLint** - Configured in `eslint.config.js` for code quality rules
+- **Prettier** - Auto-formatting with rules in `.prettierrc.json`
+  - 2-space indentation
+  - Single quotes for strings
+  - Trailing commas where valid
+  - Line length: 100 characters (practical limit)
+
+### Code Organization
+
+- **Barrel Exports** - Each package has `src/index.ts` that re-exports public API
+- **Type-Safe Code** - No `any` types unless absolutely necessary with `// @ts-ignore` comments
+- **Clear Imports** - Explicit imports from package exports, not internal paths
+
+### Commit Message Format
+
+Follow **Conventional Commits** (see Git Workflow section above):
+
+```
+type(scope): brief description under 50 chars
+
+Optional longer body explaining the "why" and "what" of the change.
+Keep lines under 72 characters for readability.
+
+Closes #123  # Optional reference to related issues
+```
+
+### Documentation Standards
+
+When writing documentation:
+
+1. **Be Specific** - Explain decisions, not just facts
+2. **Include Examples** - Code examples for technical decisions
+3. **Link References** - Link to related docs
+4. **Update AGENTS.md** - Add new docs to the navigation
+5. **Explain the Why** - Focus on reasoning, not just implementation
+
+Example documentation template:
+
+```markdown
+# Feature Name
+
+## Overview
+
+One-sentence description of what this is and why it exists.
+
+## Design
+
+Detailed explanation of the design and key decisions.
+
+## Implementation
+
+How it works technically with code examples.
+
+## Examples
+
+Real-world usage examples.
+
+## Related
+
+Links to related documentation.
+```
+
+### Testing Approach
+
+- **Unit Tests** - Test individual functions and classes
+- **Integration Tests** - Test package interactions
+- **Test Coverage** - Aim for high coverage of critical paths
+- **Descriptive Names** - Test names explain what is being tested
+
+Test file locations:
+
+- Core code: `src/module.ts`
+- Tests: `tests/module.test.ts`
+
+## Common Tasks for Agents
+
+### Adding a New Package
+
+1. **Create directory structure**:
+
+   ```bash
+   mkdir -p packages/my-package/src
+   ```
+
+2. **Create package.json** with name `@harness-engineering/my-package`
+
+3. **Add TypeScript configuration** (`tsconfig.json`)
+
+4. **Export from src/index.ts** (barrel export)
+
+5. **Add to root tsconfig.json** references
+
+6. **Add to pnpm-workspace.yaml** if not auto-detected
+
+### Updating Documentation
+
+1. **Create or edit markdown file** in appropriate `/docs/` subdirectory
+
+2. **Follow documentation standards** (see Conventions section)
+
+3. **Update navigation** - Add links to AGENTS.md or VitePress config if needed
+
+4. **Link to related docs** - Help agents navigate to context
+
+5. **Update AGENTS.md** if creating new major sections
+
+### Running Tests
+
+```bash
+# Run all tests
+pnpm test
+
+# Watch mode for development
+pnpm test:watch
+
+# Test specific package
+pnpm test --filter=@harness-engineering/core
+
+# Run with coverage
+pnpm test -- --coverage
+```
+
+### Building the Project
+
+```bash
+# Build all packages
+pnpm build
+
+# Build specific package
+pnpm build --filter=@harness-engineering/core
+
+# Development mode (watch)
+pnpm dev
+
+# Clean build (remove artifacts)
+pnpm clean && pnpm build
+```
+
+## Context for AI Agents
+
+### Our Approach to AI Development
+
+This project is **specifically designed** for AI agents to work on it effectively:
+
+1. **Documentation is Law** - Decisions are recorded, not assumed
+2. **Explicit Over Implicit** - Clear patterns and constraints guide work
+3. **Mechanical Validation** - Rules are enforced by code, not hope
+4. **Self-Verification** - Agents can run tests and validate their work
+5. **Context-Dense** - All information needed is in the repository
+
+### Principles to Follow
+
+When working on this project, AI agents should:
+
+1. **Read AGENTS.md First** - Understand the project context
+2. **Check Related Documentation** - Follow links to understand decisions
+3. **Follow Conventions Strictly** - Code style, commit messages, structure
+4. **Write Tests** - Verify new code before committing
+5. **Update Documentation** - Keep docs in sync with code changes
+6. **Self-Review** - Run tests, check formatting, verify types before submitting
+7. **Be Specific in PRs** - Explain the why, not just the what
+8. **Respect Boundaries** - Stay within architectural constraints
+
+### Harness Engineering Principles
+
+The project embodies these core principles:
+
+1. **Context Engineering** - All knowledge lives in git (this AGENTS.md, architectural docs, specs)
+2. **Architectural Rigidity** - Layered architecture with mechanical constraints prevents bad patterns
+3. **Agent Feedback Loop** - Self-review, peer review, testing all happen before human review
+4. **Entropy Management** - Documentation must stay in sync with code
+5. **Depth-First Implementation** - Complete features fully before starting new ones
+6. **Measurable Success** - Track metrics: agent autonomy, harness coverage, context density
+
+### Error Handling Pattern
+
+Always use Result types for operations that may fail:
+
+```typescript
+import type { Result, ValidationError } from '@harness-engineering/core';
+import { createError } from '@harness-engineering/core';
+
+export function validateConfig(data: unknown): Result<Config, ValidationError> {
+  if (!isValidConfig(data)) {
+    return {
+      ok: false,
+      error: createError<ValidationError>('VALIDATION_FAILED', 'Invalid config'),
+    };
+  }
+  return { ok: true, value: data as Config };
+}
+```
+
+This makes error handling explicit and type-safe.
+
+## Quick Reference
+
+### File Locations by Task
+
+| Task                 | Location                                 |
+| -------------------- | ---------------------------------------- |
+| Add a new feature    | `packages/core/src/newfeature.ts`        |
+| Write tests          | `packages/core/tests/newfeature.test.ts` |
+| Update standard      | `docs/standard/`                         |
+| Create a guide       | `docs/guides/`                           |
+| API reference        | `docs/api/`                              |
+| Technical specs      | `docs/changes/`                          |
+| Implementation plans | `docs/plans/`                            |
+
+### Important Configuration Files
+
+| File                      | Purpose                                                                |
+| ------------------------- | ---------------------------------------------------------------------- |
+| `package.json`            | Root project metadata and scripts                                      |
+| `pnpm-workspace.yaml`     | Monorepo workspace definition                                          |
+| `tsconfig.json`           | Root TypeScript configuration with project references                  |
+| `turbo.json`              | Turborepo build orchestration                                          |
+| `eslint.config.js`        | ESLint configuration (flat config format)                              |
+| `.prettierrc.json`        | Code formatting rules                                                  |
+| `harness.config.json`     | Harness project settings (skills, roadmap, telemetry)                  |
+| `harness.orchestrator.md` | Orchestrator runtime config (tracker, polling, agent backends/routing) |
+
+### Development Commands Cheat Sheet
+
+```bash
+# Setup
+pnpm install
+
+# Development
+pnpm dev              # Watch mode
+pnpm test:watch       # Tests in watch mode
+pnpm format           # Auto-format code
+
+# Validation
+pnpm test             # Run tests
+pnpm lint             # Check linting
+pnpm typecheck        # Check types
+pnpm format:check     # Check formatting
+
+# Building
+pnpm build            # Build all packages
+pnpm docs:dev         # Dev docs server
+
+# Cleanup
+pnpm clean            # Remove all build artifacts
+```
+
+## Additional Resources
+
+- **Project Repository**: https://github.com/Intense-Visions/harness-engineering
+- **Main Documentation**: See `/docs/` directory
+- **Standard Specification**: `/docs/standard/`
+- **Implementation Plans**: `/docs/plans/`
+
+## Updating This Document
+
+AGENTS.md should be kept up-to-date as the project evolves. When making significant changes:
+
+1. Update relevant sections in this file
+2. Add new sections for new major features
+3. Keep links current
+4. Verify all paths are correct
+5. Commit with `docs: update AGENTS.md` message
+
+This is the living documentation of our project - keep it accurate and comprehensive.
+
+---
+
+**Last Updated**: 2026-04-27
+**Version**: 1.2
+**Maintained By**: AI Agents and Engineering Team

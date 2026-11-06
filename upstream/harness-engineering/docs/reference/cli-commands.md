@@ -1,0 +1,2118 @@
+<!-- AUTO-GENERATED — do not edit. Run `pnpm run generate-docs` to regenerate. -->
+
+# CLI Command Reference
+
+Complete reference for all `harness` CLI commands and subcommands. See the [Features Overview](../guides/features-overview.md) for narrative documentation.
+
+## Top-Level Commands
+
+### `harness add <type> <name>`
+
+Add a component to the project
+
+**Arguments:**
+
+- `type` (required) — Component type (layer, module, doc, skill, persona)
+- `name` (required) — Component name
+
+### `harness advise-skills`
+
+Content-based skill recommendations for a spec. Writes (and overwrites) SKILLS.md next to the spec unless --dry-run.
+
+**Options:**
+
+- `--spec-path` — Path to the spec (proposal.md)
+- `--thorough` — Include Consider tier in output
+- `--top` — Max skills per tier (default 5)
+- `--dry-run` — Print the recommendations without writing SKILLS.md. Default: write.
+- `--json` — Output as JSON
+
+### `harness align-design-system`
+
+Apply codemods for safe DRIFT-T001/T002/T003 findings and emit suggestions for DRIFT-T004 + all DRIFT-P\*. Runs standalone (invokes detect-design-drift internally) or pipeline (reads pipeline.driftFindings from .harness/handoff.json).
+
+**Options:**
+
+- `--dry-run` — Compute diffs without writing files. Default: write.
+- `-f, --files` — Optional file/glob scope (standalone mode only — passed to detect-design-drift).
+- `--mode` — standalone (default) or pipeline (read findings from handoff.json) (default: "standalone")
+- `--design-strictness` — Override design.strictness: strict | standard | permissive
+- `--revert` — Inverse-apply the most-recent batch recorded at .harness/align/last-batch.json. Skips files edited externally since the apply.
+
+### `harness api-craft`
+
+LLM-judgment critique of API quality — the ceiling questions a rule-based OpenAPI check cannot ask. 9 seed rubrics (resource-models-the-domain, naming-is-predictable, verbs-are-honest, status-codes-are-correct, errors-are-actionable, response-shapes-are-predictable, collections-paginate-and-filter, mutations-are-idempotency-honest, evolves-without-breaking). Critiques a project’s own OpenAPI documents and route/handler definitions per file.
+
+**Options:**
+
+- `-f, --files` — Optional file scope (overrides API-surface discovery)
+- `--routes-dir` — Directory of route/handler definitions to critique
+- `--spec-file` — Explicit OpenAPI/Swagger document to critique
+- `--exclude-dirs` — Additional subdir names to skip while walking
+- `--max-files` — Cap surface count (default: 60)
+
+### `harness audit-protected`
+
+Report all harness-ignore protected code regions
+
+### `harness backfill-skill-provenance`
+
+Stamp `provenance: user-authored` on every catalog skill missing the field (one-shot migration)
+
+**Options:**
+
+- `--root` — Project root containing agents/skills/ (default: current working directory)
+
+### `harness blueprint [path]`
+
+Generate a self-contained, interactive blueprint of the codebase
+
+**Arguments:**
+
+- `path` (optional) — Path to the project root
+
+**Options:**
+
+- `-o, --output` — Output directory (default: "docs/blueprint")
+
+### `harness check-arch`
+
+Check architecture assertions against baseline and thresholds
+
+**Options:**
+
+- `--update-baseline` — Capture current state as new baseline
+- `--module` — Check a single module
+- `--allow-regress` — Permit a --update-baseline that worsens a metric (requires --reason)
+- `--reason` — Why an accepted regression is acceptable (logged to audit)
+- `--findings-json` — Emit findings contract as a trailing JSON line (#691)
+
+### `harness check-deployment`
+
+Verify deployment readiness and gate a deploy on hard violations
+
+**Options:**
+
+- `--findings-json` — Emit findings contract as a trailing JSON line
+
+### `harness check-deps`
+
+Validate dependency layers and detect circular dependencies
+
+**Options:**
+
+- `--findings-json` — Emit the machine-readable maintenance findings contract ({ findings: N }) as a trailing stdout line (#691)
+
+### `harness check-design`
+
+Run the design verifier suite (component-anatomy + design-craft critique). Mirrors `harness check-docs`. Single-pass; the convergence fix loop lives in the design-pipeline orchestrator.
+
+**Options:**
+
+- `-m, --mode` — Audit mode: fast | full (default: "full")
+- `-f, --files` — Optional scoping by explicit file path (globs are not expanded). Defaults to all project source files.
+
+### `harness check-docs`
+
+Check documentation coverage
+
+**Options:**
+
+- `--min-coverage` — Minimum coverage percentage (default: "80")
+- `--findings-json` — Emit the machine-readable maintenance findings contract ({ findings: N }) as a trailing stdout line (#691)
+
+### `harness check-harness-strength`
+
+Mechanically audit this project's harness setup against the 7 strength patterns
+
+**Options:**
+
+- `--severity` — Minimum severity threshold to display and gate on (default: "warning")
+- `--mode` — Audit mode: adopter | toolkit (default: auto-detect)
+- `--toolkit` — Force toolkit mode
+- `--adopter` — Force adopter mode
+- `--report-only` — Always exit 0 regardless of findings
+
+### `harness check-operational-drift`
+
+Flag operational-policy changes (hooks, thresholds, --skip list) that lack a corresponding ADR
+
+**Options:**
+
+- `--base` — Base git ref to diff against (default: merge-base with default branch)
+- `--strict` — Treat a missing ADR as blocking (non-zero exit), overriding config
+
+### `harness check-perf`
+
+Run performance checks: structural complexity, coupling, and size budgets
+
+**Options:**
+
+- `--structural` — Run structural complexity checks only
+- `--coupling` — Run coupling metric checks only
+- `--size` — Run size budget checks only
+- `--severity` — Minimum severity that fails the command; when set, violations below it are excluded from the report and never fail the gate (error, warning, info)
+
+### `harness check-phase-gate`
+
+Verify that implementation files have matching spec documents
+
+### `harness check-security`
+
+Run lightweight security scan: secrets, injection, XSS, weak crypto
+
+**Options:**
+
+- `--severity` — Minimum severity that fails the command; findings below it are excluded from the report and never fail the gate (error, warning, info) (default: "warning")
+- `--changed-only` — Only scan git-changed files
+- `--fail-on-empty` — Fail when the scan matched 0 files. A scan that read nothing abstained rather than passed; recommended for CI gates
+- `--findings-json` — Emit the machine-readable maintenance findings contract ({ findings: N }) as a trailing stdout line (#691)
+
+### `harness check-vocabulary`
+
+Fail when deprecated or renamed canonical terms reappear in skills/docs prose
+
+### `harness cleanup`
+
+Detect entropy issues (doc drift, dead code, patterns, duplication). Duplication is advisory — it never affects the exit code — and under --type all it runs only when entropy.duplication is configured in harness.config.json.
+
+**Options:**
+
+- `-t, --type` — Issue type: drift, dead-code, patterns, duplication, all (default: "all")
+- `--findings-json` — Emit the machine-readable maintenance findings contract ({ findings: N }) as a trailing stdout line (#691)
+
+### `harness cleanup-sessions`
+
+Remove stale entries from .harness/. Default: only .harness/sessions/ (no write in 24h).
+
+**Options:**
+
+- `--dry-run` — List stale entries without deleting them
+- `--path` — Project root path (default: ".")
+- `--all` — Sweep every registered .harness/ target
+- `--include` — Comma-separated target names (mutually-exclusive with --exclude/--all)
+- `--exclude` — Comma-separated target names to skip
+
+### `harness cli-ergonomics-craft`
+
+LLM-judgment critique of CLI ergonomics quality — the ceiling questions a mechanical check cannot ask. 7 seed rubrics (names-are-predictable, help-is-task-oriented, errors-are-actionable, defaults-are-sane, output-is-scannable, composes-with-other-tools, destructive-actions-are-guarded). Critiques a project’s own command definitions per file.
+
+**Options:**
+
+- `-f, --files` — Optional file scope (overrides command discovery)
+- `--commands-dir` — Directory of command definitions to critique
+- `--exclude-dirs` — Additional subdir names to skip while walking
+- `--max-files` — Cap command count (default: 60)
+
+### `harness code-craft`
+
+LLM-judgment critique of code quality / readability — the ceiling counterpart to the rule-based code floor (entropy-cleaner / enforce-architecture / complexity thresholds). 7 seed rubrics (reveals-intent, control-flow-honest, one-story-one-altitude, abstraction-earns-keep, simplest-it-could-be, signature-keeps-promise, senior-nods-not-winces). Per-unit critique of functions, methods, and classes. Identifier-level naming is delegated to naming-craft.
+
+**Options:**
+
+- `-f, --files` — Optional file scope (overrides packages/\*/src discovery)
+- `--packages` — Restrict to specific packages under packages/
+- `--max-files` — Cap source-file count (default: 100)
+- `--max-units-per-file` — Cap per-file unit critique (default: 20)
+
+### `harness comprehend`
+
+Compile and maintain the per-module comprehension substrate
+
+**Options:**
+
+- `--changed` — Recompile only modules owning changed files (default)
+- `--all` — Recompile every module (backfill)
+- `--check` — Token-free: report source-stale units, exit non-zero if any
+- `--refresh` — Opt-in token-gated CI refresh (#1689): on the single-writer main-pass with a provider credential and comprehension.ci:refresh, regenerate+stage committed semantic; a clean no-op otherwise
+- `--since` — With --check: also fail on any module that regressed semantic present→absent vs this git ref (token-free)
+- `--context` — With --check --since: which path to guard (ADR 0116 §4). "main" (default): present→absent is a regression. "pr": the static-only PR path, present→absent is expected and never flagged.
+- `--stats` — Report served-vs-raw token savings (token-free)
+- `--static` — Static-only: never resolve a provider or call an LLM (pre-commit/CI posture)
+- `--stage` — git-add the compiled unit shards after a run (pre-commit posture)
+- `--hook` — Pre-commit-hook posture: no-op unless comprehension.hook is enabled
+
+### `harness comprehension-merge-driver <base> <ours> <theirs> <path>`
+
+[internal, git-invoked] Merge driver for comprehension \_module.md shards (keep-ours-if-fresh, else static recompile)
+
+**Arguments:**
+
+- `base` (required) — git %O — common-ancestor temp path (unused)
+- `ours` (required) — git %A — ours temp path; the resolved shard is written here
+- `theirs` (required) — git %B — other-side temp path (unused)
+- `path` (required) — git %P — the shard pathname being merged
+
+### `harness context-report`
+
+Attribute the always-loaded context surface cost per turn, per tier
+
+**Options:**
+
+- `--tier` — Measure the tool schemas at this tier
+- `--exact` — Use exact /v1/messages/count_tokens counts (needs ANTHROPIC_API_KEY)
+- `--window` — Context-window size to budget against (default: 200000)
+- `--top` — How many top contributors to show (default: 10)
+- `--no-skills` — Skip the platform skill trees
+- `--json` — Emit machine-readable JSON
+
+### `harness copy-craft`
+
+LLM-judgment critique of prose-in-code across six surfaces: error messages, log lines, CLI output, commit subjects, PR descriptions, code comments. Third craft-pipeline ceiling skill. Graceful degradation when git/gh prereqs absent.
+
+**Options:**
+
+- `-f, --files` — Optional source file/glob scope
+- `-s, --surfaces` — Restrict to: error / log / cli-output / commit / pr-description / comment
+- `--max-files` — Cap source file count (default: 100)
+- `--max-items-per-file` — Cap per-file item sampling (default: 20)
+- `--commits-since` — Commit window (default: '1 month ago')
+- `--pr-limit` — PR count cap (default: 20)
+
+### `harness create-skill`
+
+Scaffold a new skill with skill.yaml and SKILL.md
+
+**Options:**
+
+- `--name` — Skill name (kebab-case)
+- `--description` — Skill description
+- `--cognitive-mode` — Cognitive mode (adversarial-reviewer, constructive-architect, meticulous-implementer, diagnostic-investigator, advisory-guide, meticulous-verifier) (default: "constructive-architect")
+- `--reads` — File patterns the skill reads
+- `--produces` — What the skill produces
+- `--pre-checks` — Pre-check commands
+- `--post-checks` — Post-check commands
+
+### `harness cross-check`
+
+Check cross-artifact consistency (plan-to-implementation coverage and staleness)
+
+**Options:**
+
+- `--specs-dir` — Specs directory relative to project root (default: docs/specs)
+- `--plans-dir` — Plans directory relative to project root (default: docs/plans)
+- `--findings-json` — Emit the machine-readable maintenance findings contract ({ findings: N }) as a trailing stdout line (#691)
+
+### `harness dashboard`
+
+Start the Harness local web dashboard
+
+**Options:**
+
+- `--port` — Client dev server port (default: "3700")
+- `--api-port` — API server port (default: "3701")
+- `--orchestrator-url` — Orchestrator URL (default: http://localhost:8080)
+- `--no-open` — Do not automatically open browser
+- `--cwd` — Project directory (defaults to cwd)
+
+### `harness design-pipeline`
+
+Run the design-pipeline orchestrator: FRESHEN → DETECT → FIX → AUDIT → FILL → REPORT. Composes detect-design-drift, align-design-system, audit-component-anatomy, audit-brand-compliance, and design-craft-elevator into a single sequential pipeline with convergence-based remediation.
+
+**Options:**
+
+- `--fix` — Enable convergence-based remediation (default: detect + report only)
+- `--no-freshen` — Skip the FRESHEN phase
+- `--no-fill` — Skip the FILL phase (input bootstrap + craft polish)
+- `--ci` — Deprecated, no effect: every run is already non-interactive and applies safe fixes only
+- `-f, --files` — Optional file/glob scope passed to each verifier
+- `-m, --mode` — Verifier mode: fast | full (default: "fast")
+- `--design-strictness` — Override design.strictness: strict | standard | permissive
+
+### `harness docs-craft`
+
+LLM-judgment critique of documentation quality — the ceiling counterpart to the rule-based doc floor (detect-doc-drift / check-docs / docs-pipeline). 7 seed rubrics (teaches-not-describes, order-matches-mental-model, examples-earn-their-place, prose-is-alive, api-doc-predicts-response, stranger-same-understanding, scannable-and-navigable). Per-file critique.
+
+**Options:**
+
+- `-f, --files` — Optional file scope (overrides docs/ discovery)
+- `--exclude-dirs` — Additional subdir names to skip under docs/
+- `--max-files` — Cap doc count (default: 60)
+
+### `harness doctor`
+
+Check environment health: Node, slash commands, MCP, integrations, integration credentials, hooks, baselines, sessions
+
+### `harness fix-drift`
+
+Auto-fix entropy issues (doc drift, dead code)
+
+**Options:**
+
+- `--no-dry-run` — Actually apply fixes (default is dry-run mode)
+
+### `harness generate`
+
+Generate all platform integrations (slash commands + agent definitions)
+
+**Options:**
+
+- `--platforms` — Target platforms (comma-separated) (default: "claude-code,gemini-cli")
+- `--global` — Write to global directories
+- `--include-global` — Include built-in global skills
+- `--output` — Custom output directory
+- `--dry-run` — Show what would change without writing
+- `--yes` — Skip deletion confirmation prompts
+
+### `harness generate-agent-definitions`
+
+Generate agent definition files from personas for Claude Code, Gemini CLI, and Cursor
+
+**Options:**
+
+- `--platforms` — Target platforms (comma-separated) (default: "claude-code,gemini-cli")
+- `--global` — Write to global agent directories
+- `--output` — Custom output directory
+- `--dry-run` — Show what would change without writing
+
+### `harness generate-slash-commands`
+
+Generate native commands for Claude Code, Gemini CLI, Codex CLI, and Cursor from skill metadata
+
+**Options:**
+
+- `--platforms` — Target platforms (comma-separated) (default: "claude-code,gemini-cli")
+- `--global` — Write to global config directories
+- `--include-global` — Include built-in global skills alongside project skills
+- `--output` — Custom output directory
+- `--skills-dir` — Skills directory to scan
+- `--skills-dir-only` — Use --skills-dir as the exclusive source; skip project/community/global (machine-wide) skill resolution. For generating repo-owned artifacts without leaking globally-installed skills (#704).
+- `--dry-run` — Show what would change without writing
+- `--yes` — Skip deletion confirmation prompts
+- `--cursor-mode` — For cursor platform: "rules" (.mdc with description/globs/alwaysApply, default) or "commands" (.md with name/description for plugin commands/ dir) (default: "rules")
+
+### `harness holiday-confidence`
+
+Holiday Confidence KPI — % of merged PRs in the window that cleared review, outcome-eval, and the no-drift window gates.
+
+**Options:**
+
+- `--window` — Rolling window in days (default 30)
+- `--path` — Project root (default: cwd)
+- `--json` — Emit JSON to stdout instead of pretty text
+
+### `harness impact-preview`
+
+Show blast radius of staged changes using the knowledge graph
+
+**Options:**
+
+- `--detailed` — Show all affected files instead of top items
+- `--per-file` — Show impact per staged file instead of aggregate
+- `--path` — Project root (default: cwd)
+
+### `harness init`
+
+Initialize a new harness-engineering project
+
+**Options:**
+
+- `-n, --name` — Project name
+- `-l, --level` — Adoption level (basic, intermediate, load-bearing-minimum, advanced) (default: "load-bearing-minimum")
+- `-t, --template` — Specific template name (e.g. orchestrator)
+- `--tier` — Adoption tier (ADR 0101): minimal (the 5-item Minimum Viable Harness floor), basic, intermediate, load-bearing-minimum, advanced
+- `--framework` — Framework overlay (nextjs)
+- `--language` — Target language (typescript, python, go, rust, java)
+- `-f, --force` — Overwrite existing files
+- `-y, --yes` — Use defaults without prompting
+
+### `harness insights`
+
+Composite project report — health, entropy, decay, attention, impact.
+
+**Options:**
+
+- `--json` — Emit JSON to stdout instead of pretty text
+- `--skip` — Comma-separated keys to skip (health,entropy,decay,attention,impact)
+
+### `harness install <skill>`
+
+Install skills from npm registry, local directory, or GitHub repository
+
+**Arguments:**
+
+- `skill` (required) — Skill name, @harness-skills/scoped package, or "." for bulk install
+
+**Options:**
+
+- `--version` — Semver range or exact version to install
+- `--force` — Force reinstall even if same version is already installed
+- `--from` — Install from local path, directory, or GitHub (github:owner/repo, https://github.com/owner/repo)
+- `--global` — Install globally (~/.harness/skills/community/) for all projects
+- `--registry` — Use a custom npm registry URL
+- `--generate` — Generate slash commands after install without prompting
+- `--no-generate` — Skip generating slash commands after install
+
+### `harness install-constraints <source>`
+
+Install a constraints bundle into the local harness config
+
+**Arguments:**
+
+- `source` (required) — Path to a .harness-constraints.json bundle file
+
+**Options:**
+
+- `--force-local` — Resolve all conflicts by keeping local values
+- `--force-package` — Resolve all conflicts by using package values
+- `--dry-run` — Show what would change without writing files
+- `-c, --config` — Path to harness.config.json
+
+### `harness knowledge-craft`
+
+LLM-judgment critique of knowledge-entry quality (docs/knowledge/, excluding decisions/). Fifth non-design craft-pipeline ceiling skill; 7 seed rubrics (load-bearing-fact, earns-graph-place, carries-forward-decision, …). Per-file critique.
+
+**Options:**
+
+- `-f, --files` — Optional file scope (overrides discovery)
+- `--exclude-dirs` — Additional subdir names to skip (decisions is always excluded)
+- `--max-files` — Cap entry count (default: 50)
+
+### `harness knowledge-pipeline`
+
+Run knowledge extraction, drift detection, and gap analysis
+
+**Options:**
+
+- `--fix` — Enable convergence-based auto-remediation (default: detect-only)
+- `--ci` — Non-interactive mode — apply safe fixes only, report everything else
+- `--domain` — Limit pipeline to a specific knowledge domain
+- `--drift-check` — Exit 1 if unresolved drift exists (CI gate mode)
+- `--analyze-images` — Enable vision model analysis of image files
+- `--image-paths` — Comma-separated image file paths for analysis
+- `--coverage` — Display per-domain coverage report
+- `--check-contradictions` — Display cross-source contradiction report
+
+### `harness list-capabilities`
+
+Audit each MCP tool: read/write/exec scope, network access, and trust tag
+
+**Options:**
+
+- `--by-permission` — Group tools by read/write/exec/network scope
+- `--json` — Emit machine-readable JSON
+
+### `harness naming-craft`
+
+LLM-judgment critique of identifier names (variables, functions, types, files). First craft-pipeline ceiling skill; uses curated rubric catalog from Martin/Beck/Karlton.
+
+**Options:**
+
+- `-f, --files` — Optional file/glob scope
+- `-k, --kinds` — Restrict to variable / function / type / file (default: all)
+- `--max-files` — Cap file count (default: 100)
+- `--max-identifiers-per-file` — Cap per-file identifier sampling (default: 15)
+
+### `harness outcome-eval-ci`
+
+Run the post-execution spec-satisfaction gate (outcome-eval) for CI: judge the change against its spec and block (exit 1) only on a high-confidence NOT_SATISFIED
+
+**Options:**
+
+- `--spec` — spec markdown to judge against (default: auto-discover from the diff)
+- `--diff` — git range (default: origin/<base>...HEAD)
+- `--test-output` — file with captured test-runner output (default: none)
+- `--block-on` — blocking | none (default: "blocking")
+- `--model` — model override for the outcome-eval LLM call
+- `--commit` — head sha to stamp on the persisted node (default: git rev-parse HEAD)
+- `--comment` — post the verdict as a comment on the current branch's PR via gh
+- `--out` — write the verdict JSON artifact to a file (use the global --json to stream it to stdout instead)
+
+### `harness pre-merge-brief`
+
+Compose a senior-facing pre-merge PR brief (diff, review, signals, outcome, "worth your eyes")
+
+**Options:**
+
+- `--from` — review-ci --json verdict artifact
+- `--comment` — upsert the brief as a sticky comment on the current branch's PR
+- `--diff` — git range (default: origin/<base>...HEAD)
+- `--head` — head commit sha for the outcome lookup (default: git rev-parse HEAD)
+
+### `harness predict`
+
+Predict which architectural constraints will break and when
+
+**Options:**
+
+- `--category` — Filter to a single metric category
+- `--no-roadmap` — Baseline only — skip roadmap spec impact
+- `--horizon` — Forecast horizon in weeks (default: 12) (default: "12")
+
+### `harness provenance [commitish]`
+
+Read the Harness-\* provenance trailer for a commit, or shape-check a range (distinct from `harness rules provenance`, the ADR-0100 rule reporter)
+
+**Arguments:**
+
+- `commitish` (optional) — Commit to read the Harness-\* provenance trailer from (default: HEAD)
+
+**Options:**
+
+- `--check` — Shape-gate mode: fail on a malformed trailer; skip unclaimed commits.
+- `--range` — Shape-check every commit in a range (e.g. origin/main...HEAD).
+- `--json` — Emit the machine-readable report as JSON.
+
+### `harness public-outposts`
+
+List public pnyon Outposts you can read comprehension from (discovery directory).
+
+**Options:**
+
+- `--json` — Emit JSON to stdout instead of a table
+
+### `harness publish-analyses`
+
+Publishes locally generated intelligence analyses to the external issue tracker (e.g., GitHub)
+
+**Options:**
+
+- `-d, --dir` — Workspace directory (default: current working directory)
+
+### `harness recommend`
+
+Recommend skills based on codebase health analysis
+
+**Options:**
+
+- `--no-cache` — Force fresh health snapshot
+- `--top` — Max recommendations (default 5) (default: "5")
+
+### `harness refinement-demand`
+
+Report refinement frequency per progressive-context class (demand signal)
+
+**Options:**
+
+- `--json` — Emit machine-readable JSON
+
+### `harness release-inventory`
+
+Report merged-but-unreleased inventory (pending changesets + unreleased commits) and its release-cadence threshold
+
+**Options:**
+
+- `--tag-pattern` — Git tag glob that defines a release (default: v\* or config)
+- `--strict` — Exit non-zero when a threshold is breached (default: report-only)
+
+### `harness review-ci`
+
+Run the tiered code-review gate (floor + optional LLM runner) for CI
+
+**Options:**
+
+- `--runner` — claude | gemini | antigravity | codex | cursor | local (omit = floor-only)
+- `--block-on` — approve | comment | request-changes | none (default: "request-changes")
+- `--diff` — git range (default: origin/<base>...HEAD)
+- `--comment` — post the verdict as a comment on the current branch's PR via gh
+- `--out` — write the verdict JSON artifact to a file (use the global --json to stream it to stdout instead)
+
+### `harness rework`
+
+Report per-surface rework rate from git history (planned vs unplanned; report-only)
+
+**Options:**
+
+- `--since` — Lookback window (e.g. 24h, 7d, 4w, 3mo). (default: "30d")
+- `--min-commits` — Exclude surfaces with fewer than n commits in the window. (default: "2")
+- `--top` — Cap the ranked rows printed (JSON is never truncated).
+- `--json` — Emit the machine-readable ReworkReport as JSON.
+
+### `harness scan-config`
+
+Scan CLAUDE.md, AGENTS.md, .gemini/settings.json, and skill.yaml for prompt injection patterns
+
+**Options:**
+
+- `--path` — Target directory to scan (default: cwd)
+- `--fix` — Strip high-severity patterns from files in-place
+
+### `harness search <query>`
+
+Full-text search over archived + live session content.
+
+**Arguments:**
+
+- `query` (required) — FTS5 query (bare words AND-joined; quotes/AND/OR/NOT/column: for advanced syntax)
+
+**Options:**
+
+- `-n, --limit` — Max results (default: "20")
+- `--archived-only` — Skip live sessions, only search archived ones
+- `--json` — Emit JSON to stdout instead of pretty text
+- `--reindex` — Drop and rebuild the index from .harness/archive/sessions before searching
+- `--file-kinds` — Comma-separated subset of {summary,learnings,failures,sections,llm_summary}
+
+### `harness security-craft`
+
+LLM-judgment critique of security posture (TS/JS source). Sixth non-design craft-pipeline ceiling skill (the final sub-project). AST-driven signal detection fires only on files with security-relevant constructs; conservative confidence defaults manage the FP risk inherent in judgment-based security.
+
+**Options:**
+
+- `-f, --files` — Optional file scope (overrides discovery)
+- `-p, --packages` — Restrict to specific packages under packages/
+- `--max-files` — Cap source-file count (default: 100)
+- `--max-signals-per-file` — Cap per-file signal critique (default: 10)
+
+### `harness setup`
+
+Configure harness environment: slash commands, MCP, and more
+
+### `harness setup-mcp`
+
+Configure MCP server for AI agent integration
+
+**Options:**
+
+- `--client` — Client to configure (claude, gemini, codex, cursor, opencode, antigravity, all) (default: "all")
+- `--pick` — Launch interactive tool picker (Cursor only)
+- `--yes` — Bypass interactive picker and use curated 25-tool set (Cursor only)
+
+### `harness share [path]`
+
+Extract and publish a constraints bundle from constraints.yaml
+
+**Arguments:**
+
+- `path` (optional) — Path to the project root
+
+**Options:**
+
+- `-o, --output` — Output directory for the bundle (default: ".")
+
+### `harness skill-regression`
+
+Run the golden-fixture skill-regression gate: score candidate skill outputs against per-skill rubrics. Advisory by default; pass --block-on regressed to block (exit 1) on a high-confidence quality regression once you have recorded real baselines
+
+**Options:**
+
+- `--fixtures` — golden fixtures directory (default: fixtures/skill-regression)
+- `--candidate` — directory of captured candidate outputs (default: self-test)
+- `--skill` — only evaluate fixtures for this skill
+- `--block-on` — regressed | none (advisory by default; record baselines with --update-baseline before opting into regressed) (default: "none")
+- `--update-baseline` — re-score golden reference outputs and rewrite fixture baselines
+- `--model` — model override for the judge LLM call
+- `--out` — write the verdicts JSON artifact to a file
+
+### `harness spec-craft`
+
+LLM-judgment critique of spec quality (proposals + ADRs). Second craft-pipeline ceiling skill; 7 seed rubrics from the spec-quality canon. Per-section critique.
+
+**Options:**
+
+- `-f, --files` — Optional spec file/glob scope
+- `-k, --kinds` — Restrict to proposal / adr (default: both)
+- `-s, --sections` — Restrict to specific canonical section names
+- `--max-files` — Cap doc count (default: 50)
+- `--max-sections-per-file` — Cap per-doc section critique (default: 10)
+
+### `harness stale-constraints`
+
+Detect architectural constraints not violated within a window (candidates for removal)
+
+**Options:**
+
+- `--window` — Days without violation to consider a constraint stale (default: 30)
+- `--category` — Filter by category (circular-deps, layer-violations, complexity, coupling, forbidden-imports, module-size, dependency-depth)
+
+### `harness sync-analyses`
+
+Pull published intelligence analyses from the external issue tracker into the local .harness/analyses/ directory
+
+**Options:**
+
+- `-d, --dir` — Workspace directory (default: current working directory)
+
+### `harness sync-main`
+
+Fast-forward the local default branch from origin (no-op on conflict)
+
+**Options:**
+
+- `--json` — Emit a SyncMainResult JSON object
+- `--path` — Project root path (default: ".")
+
+### `harness test-craft`
+
+LLM-judgment critique of test quality across vitest/jest/mocha/playwright/pytest. Fourth craft-pipeline ceiling skill. Per-test critique with best-effort source pairing.
+
+**Options:**
+
+- `-f, --files` — Optional test file/glob scope
+- `--frameworks` — Restrict to: vitest / jest / mocha / playwright / pytest
+- `--max-files` — Cap test file count (default: 100)
+- `--max-tests-per-file` — Cap per-file test critique (default: 20)
+- `--no-source-pair` — Skip source-pairing resolution
+- `--emit` — Write a machine-readable per-test verdict report (JSON) to this path for downstream tooling
+
+### `harness traceability`
+
+Show spec-to-implementation traceability from the knowledge graph
+
+**Options:**
+
+- `--spec` — Filter by spec file path
+- `--feature` — Filter by feature name
+
+### `harness uninstall <skill>`
+
+Uninstall a community skill
+
+**Arguments:**
+
+- `skill` (required) — Skill name or @harness-skills/scoped package name
+
+**Options:**
+
+- `--force` — Remove even if other skills depend on this one
+
+### `harness uninstall-constraints <name>`
+
+Remove a previously installed constraints package
+
+**Arguments:**
+
+- `name` (required) — Name of the constraint package to uninstall
+
+**Options:**
+
+- `-c, --config` — Path to harness.config.json
+
+### `harness update`
+
+Update all @harness-engineering packages to the latest version
+
+**Options:**
+
+- `--version` — Pin @harness-engineering/cli to a specific version
+- `--force` — Force update even if versions match
+- `--regenerate` — Only regenerate slash commands and agent definitions (skip package updates)
+
+### `harness validate`
+
+Run all validation checks
+
+**Options:**
+
+- `--cross-check` — Run cross-artifact consistency validation
+- `--agent-configs` — Validate agent configs (CLAUDE.md, hooks, skills) via agnix or built-in fallback rules
+- `--strict` — Treat warnings as errors (applies to --agent-configs)
+- `--changed` — Scope the file-walking design audits to the changed surface derived from git (vs the merge-base with the default branch). Opt-in; the full sweep is the default. Reserve the full sweep for pre-merge and scheduled runs.
+- `--affected` — Alias for --changed
+- `--since` — Scope the changed surface to files that differ from the given ref (implies --changed)
+- `--default-branch` — Branch to compute the changed-surface merge-base against (default: main)
+- `--agnix-bin` — Override the agnix binary path discovered on PATH
+- `--severity` — Minimum severity that fails the command; when set, findings below it are excluded from the report and never fail the gate (error, warning, info)
+
+### `harness verify`
+
+Verify project conventions (currently: branch naming). Works with or without a harness.config.json.
+
+**Options:**
+
+- `--branch` — Branch name to verify (defaults to HARNESS_BRANCH/GITHUB_HEAD_REF/current branch)
+- `--json` — Emit machine-readable JSON output
+
+## Adoption Commands
+
+View skill adoption telemetry
+
+### `harness adoption recent`
+
+Show recent skill invocations
+
+**Options:**
+
+- `--limit` — Number of invocations to show (default: 20) (default: "20")
+
+### `harness adoption retrospective`
+
+Generate a catalog retrospective from adoption telemetry
+
+**Options:**
+
+- `--inactive-days` — Inactivity threshold in days (default: 90) (default: "90")
+- `--top` — Rows per ranked section (default: 10) (default: "10")
+- `--out` — Output file path (default: docs/retrospectives/YYYY-MM-DD.md)
+- `--no-write` — Print the report to stdout instead of writing a file
+
+### `harness adoption skill <name>`
+
+Show detail for a specific skill
+
+### `harness adoption skills`
+
+Show top skills by invocation count
+
+**Options:**
+
+- `--limit` — Number of skills to show (default: 20) (default: "20")
+
+## Agent Commands
+
+Agent orchestration commands
+
+### `harness agent review`
+
+Run unified code review pipeline on current changes
+
+**Options:**
+
+- `--comment` — Post inline comments to GitHub PR
+- `--ci` — Enable eligibility gate, non-interactive output
+- `--deep` — Add threat modeling pass to security agent
+- `--no-mechanical` — Skip mechanical checks
+- `--thorough` — Generate task-specific rubric before reading implementation
+- `--isolated` — Two-stage review: spec-compliance then code-quality with disjoint context
+
+### `harness agent run [task]`
+
+Run an agent task
+
+**Arguments:**
+
+- `task` (optional) — Task to run (review, doc-review, test-review)
+
+**Options:**
+
+- `--timeout` — Timeout in milliseconds (default: "300000")
+- `--persona` — Run a persona by name
+- `--trigger` — Trigger context (auto, on_pr, on_commit, manual) (default: "auto")
+
+## Black-box Commands
+
+Inspect durable per-run orchestrator flight records (provenance, verdicts, tool-use)
+
+### `harness black-box list`
+
+List recorded runs, newest first
+
+**Options:**
+
+- `--dir` — Black-box directory (default: ".harness/black-box")
+
+### `harness black-box show <runId>`
+
+Show provenance, verdicts, convergence, and tool-use for a run
+
+**Options:**
+
+- `--dir` — Black-box directory (default: ".harness/black-box")
+
+## Burn Commands
+
+Claude Code usage burn: pace, budget, calibration
+
+### `harness burn budget [value]`
+
+Set or clear the self-imposed weekly ceiling (250M, 1.2x, or off)
+
+**Arguments:**
+
+- `value` (optional) — budget value; omit to show the current setting
+
+### `harness burn calibrate <percent> [valid-until]`
+
+Anchor the budget to a real /usage reading
+
+**Arguments:**
+
+- `percent` (required) — the percentage /usage reports right now
+- `valid-until` (optional) — YYYY-MM-DD after which this calibration is distrusted
+
+### `harness burn install`
+
+Wire the burn HUD statusline and hooks into ~/.claude/settings.json
+
+**Options:**
+
+- `--dry-run` — show what would change without writing
+
+### `harness burn metabolism`
+
+Classify token spend into basal (maintenance) vs anabolic (productive) and rank maintenance waste
+
+**Options:**
+
+- `--json` — Emit machine-readable JSON
+
+### `harness burn per-pr`
+
+Cost per merged PR: join burn token attribution to shipped PRs
+
+**Options:**
+
+- `--since` — only count records at/after this ISO instant
+- `--until` — only count records at/before this ISO instant
+- `--json` — emit the raw cost report as JSON
+- `--write` — persist the report to .harness/metrics/cost-per-pr.json
+
+### `harness burn report`
+
+Rescan and print the full burn report (default)
+
+### `harness burn reset-day [day] [time] [tz]`
+
+Align the week window with the reset /usage reports
+
+**Arguments:**
+
+- `day` (optional) — mon..sun or 0..6 (0=Mon); omit to show the current setting
+- `time` (optional) — local time of the reset, e.g. 08:59
+- `tz` (optional) — IANA timezone, e.g. America/Chicago
+
+### `harness burn scan`
+
+Force a cache refresh
+
+### `harness burn weeks`
+
+Weekly usage history, anchored to the configured reset
+
+## Ci Commands
+
+CI/CD integration commands
+
+### `harness ci check`
+
+Run all harness checks for CI (validate, deps, docs, entropy, phase-gate, arch)
+
+**Options:**
+
+- `--skip` — Comma-separated checks to skip (e.g., entropy,docs)
+- `--fail-on` — Fail on severity level: error (default) or warning (default: "error")
+- `--stage` — Enforce only the opted-in constraint packs for this lifecycle stage: pre-commit, pre-merge, or pre-release
+
+### `harness ci init`
+
+Generate CI configuration for harness checks
+
+**Options:**
+
+- `--platform` — CI platform: github, gitlab, or generic
+- `--language` — Project language for build/lint/test steps
+- `--checks` — Comma-separated list of checks to include
+
+### `harness ci notify <report>`
+
+Post CI check results to GitHub (PR comment or issue)
+
+**Arguments:**
+
+- `report` (required) — Path to CI check report JSON file (from harness ci check --json)
+
+**Options:**
+
+- `--target` — Notification target: pr-comment or issue
+- `--pr` — PR number (required for pr-comment target)
+- `--title` — Custom issue title (for issue target)
+- `--labels` — Comma-separated labels for created issues
+
+## Compound Commands
+
+Compound (post-mortem playbook) commands
+
+### `harness compound scan-candidates`
+
+Scan recent fixes and hotspots for undocumented learnings; write candidate prompts
+
+**Options:**
+
+- `--lookback` — Lookback window (e.g. 7d, 14d). (default: "7d")
+- `--non-interactive` — Emit single-line JSON status on stdout. Auto-detected when stdout is not a TTY.
+- `--config` — Path to harness.config.json (default: "harness.config.json")
+- `--output-path` — Override output file path (default: docs/solutions/.candidates/{YYYY-WW}.md)
+- `--solutions-dir` — Solutions directory to cross-reference (default: "docs/solutions")
+
+## Context-dictionary Commands
+
+Train a governed, versioned codebook of recurring knowledge over the comprehension corpus (report-only, #1635)
+
+### `harness context-dictionary report`
+
+Mine recurring spans, score membership, and report the trained codebook
+
+**Options:**
+
+- `--json` — Emit machine-readable JSON
+- `--write` — Persist the trained codebook to .harness/dictionary/codebook.json
+
+## Distortion Commands
+
+Rate-distortion context compaction — report-only ablation harness (#1633)
+
+### `harness distortion fit`
+
+Fit a distortion model from recorded ablation-replay observations (report-only)
+
+**Options:**
+
+- `--input` — Observations JSONL (default: .harness/metrics/ablation-replays.jsonl)
+- `--out` — Write the model JSON to this path (default: .harness/metrics/distortion-model.json)
+- `--markdown` — Also write the Markdown report to this path
+- `--version-tag` — Model version to stamp (default: 1.0.0)
+- `--threshold` — Noise threshold for the rework delta (default: 0.5)
+- `--prior` — Fold the #1632 refinement-demand log in as an advisory prior
+- `--no-write` — Print the model instead of writing files
+
+## Docs-publish Commands
+
+Publish docs to a configured provider (draft-first)
+
+### `harness docs-publish attach-media`
+
+Attach media to a draft page (returns a typed manual step to surface)
+
+**Options:**
+
+- `--page-id` — Draft page id the attachment belongs to
+- `--media-file` — Local path to the media file to upload
+- `--origin` — Provider origin (real cloud origin or localhost — never 127.0.0.1)
+
+### `harness docs-publish draft`
+
+Create or update a page in DRAFT state (never publishes)
+
+**Options:**
+
+- `--page-id` — Existing page id to update (omit to create a new draft)
+- `--space-id` — Target space id
+- `--title` — Page title
+- `--parent-id` — Parent page id for placement
+- `--body-file` — File containing the storage/body string
+- `--adf-file` — File containing the page body as ADF JSON
+
+### `harness docs-publish page-tree`
+
+Create/order draft child pages under a draft parent
+
+**Options:**
+
+- `--space-id` — Target space id
+- `--parent-id` — Draft parent page id
+- `--children-file` — JSON file: array of child nodes (title, adf/body, ordering)
+
+### `harness docs-publish verify-render`
+
+Verify a page actually renders (the only authority on render correctness)
+
+**Options:**
+
+- `--url` — Rendered URL (http(s) or file://) to assert against
+
+## Fleet Commands
+
+Fleet-family dispatch callables (spend-envelope budget consult, #1600)
+
+### `harness fleet budget-check`
+
+Consult the fleet spend envelope at DISPATCH (#1600): compare burn-observed spend against the envelope and report within | exhausted | unconfigured. When a burn cost_price_table is configured, also surfaces the spend/remaining in dollars (Refs #1525).
+
+**Options:**
+
+- `--envelope` — global spend envelope for the period, in burn units (250M, 1.2B)
+- `--fleet` — fleet key (matches burn's invoking-skill, e.g. roadmap-fleet)
+- `--fleet-envelope` — per-fleet sub-allocation for --fleet, in burn units
+- `--json` — emit the verdict as JSON
+- `--no-refresh` — use the cached burn summary without rescanning
+
+## Gateway Commands
+
+Gateway API administration
+
+### `harness gateway deliveries`
+
+Inspect and manage webhook delivery queue
+
+### `harness gateway token`
+
+Manage Gateway API tokens
+
+## Golden-build Commands
+
+Capture, verify, and diff a golden (known-good) reference state of the repo
+
+### `harness golden-build diff`
+
+Show what has drifted since the last golden build (advisory; always exits 0)
+
+**Options:**
+
+- `--path` — Reference file to fingerprint (repeatable; overrides config) (default: [])
+
+### `harness golden-build promote`
+
+Snapshot the current working tree as the golden (known-good) reference state
+
+**Options:**
+
+- `--path` — Reference file to fingerprint (repeatable; overrides config) (default: [])
+
+### `harness golden-build verify`
+
+Verify the working tree against the most recent golden; exits non-zero on drift
+
+**Options:**
+
+- `--path` — Reference file to fingerprint (repeatable; overrides config) (default: [])
+
+## Graph Commands
+
+Knowledge graph management
+
+### `harness graph bench`
+
+Measure token + tool-call savings of graph-scoped retrieval vs naive file reads
+
+**Options:**
+
+- `--json` — Emit the full machine-readable result as JSON
+- `--out` — Write the machine-readable result JSON to a file
+- `--top` — Anchors per structural family (default: "5")
+- `--judge` — Grade the answer-quality axis with an LLM judge (retrieval sufficiency; advisory). Requires ANTHROPIC_API_KEY or HARNESS_ANALYSIS_BASE_URL; degrades to INCONCLUSIVE if neither is set.
+- `--judge-model` — Model override for the answer-quality judge
+
+### `harness graph export`
+
+Export graph
+
+**Options:**
+
+- `--format` — Output format (json, mermaid)
+
+### `harness graph ingest`
+
+Ingest data into the knowledge graph
+
+**Options:**
+
+- `--source` — Source to ingest (code, knowledge, git, requirements, business-signals, jira, slack, ci, confluence, figma, miro)
+- `--all` — Run all sources (code, knowledge, git, and configured connectors)
+- `--full` — Force full re-ingestion
+
+### `harness graph integrity`
+
+Check the graph for content that cannot be trusted
+
+**Options:**
+
+- `--report-only` — Exit 0 even when error-severity findings exist
+- `--findings-json` — Print the machine-readable findings envelope
+
+### `harness graph path <sourceNodeId> <targetNodeId>`
+
+Find the shortest path between two nodes
+
+**Arguments:**
+
+- `sourceNodeId` (required) — Source node ID
+- `targetNodeId` (required) — Target node ID
+
+**Options:**
+
+- `--direction` — Traversal direction: outbound, inbound, or both (default: "both")
+
+### `harness graph query <rootNodeId>`
+
+Query the knowledge graph
+
+**Arguments:**
+
+- `rootNodeId` (required) — Starting node ID
+
+**Options:**
+
+- `--depth` — Max traversal depth (default: "3")
+- `--types` — Comma-separated node types to include
+- `--edges` — Comma-separated edge types to include
+- `--bidirectional` — Traverse both directions
+
+### `harness graph scan [path]`
+
+Scan project and build knowledge graph
+
+**Arguments:**
+
+- `path` (optional) — Project root path
+
+### `harness graph status`
+
+Show graph statistics
+
+## Hooks Commands
+
+Manage Claude Code hook configurations
+
+### `harness hooks add <hook-name>`
+
+Add a hook without changing the profile
+
+**Arguments:**
+
+- `hook-name` (required) — Hook name or alias (e.g., sentinel)
+
+### `harness hooks init`
+
+Install Claude Code hook configurations into the current project
+
+**Options:**
+
+- `--profile` — Hook profile: minimal, standard, or strict (default: "standard")
+- `--force` — Overwrite hook files even if they have local modifications
+
+### `harness hooks list`
+
+Show installed hooks and active profile
+
+### `harness hooks remove`
+
+Remove harness-managed hooks from the current project
+
+### `harness hooks run <name> [payload]`
+
+Run a bundled agent lifecycle hook by name (PATH-resolvable entry for Codex notify)
+
+**Arguments:**
+
+- `name` (required) — Hook name to run (e.g. session-retrospect-codex)
+- `payload` (optional) — JSON payload delivered by the agent (Codex notify passes it as the trailing arg)
+
+## Integrations Commands
+
+Manage MCP peer integrations (add, list, remove, dismiss, sync)
+
+### `harness integrations add <name>`
+
+Enable an MCP integration
+
+**Arguments:**
+
+- `name` (required) — Integration name (e.g. exa, github)
+
+### `harness integrations dismiss <name>`
+
+Suppress doctor recommendations for an integration
+
+**Arguments:**
+
+- `name` (required) — Integration name (e.g. exa, github)
+
+### `harness integrations list`
+
+Show all MCP integrations with status
+
+### `harness integrations remove <name>`
+
+Remove an MCP integration
+
+**Arguments:**
+
+- `name` (required) — Integration name (e.g. exa, github)
+
+### `harness integrations sync`
+
+Reconcile configured MCP servers against the catalog (report-only by default)
+
+**Options:**
+
+- `--apply` — Apply changes (prompts per group in an interactive terminal)
+- `--yes` — Apply changes without prompting (for scripts/CI)
+
+## Knowledge Commands
+
+Knowledge store fitness commands
+
+### `harness knowledge mdl`
+
+Score the knowledge store by Minimum Description Length — description cost vs measured compression value — and report reversible prune/merge recommendations (report-only)
+
+**Options:**
+
+- `--path` — Project root path (default: ".")
+- `--stream` — Target a specific stream
+- `--telemetry` — JSON file with { inclusions: InclusionEvent[], outcomes: RunOutcome[] } linking entries to run outcomes
+
+## Learnings Commands
+
+Learnings management commands
+
+### `harness learnings prune`
+
+Analyze global learnings for patterns, present improvement proposals, and archive old entries
+
+**Options:**
+
+- `--path` — Project root path (default: ".")
+- `--stream` — Target a specific stream
+
+## Linter Commands
+
+Generate and validate ESLint rules from YAML config
+
+### `harness linter generate`
+
+Generate ESLint rules from harness-linter.yml
+
+**Options:**
+
+- `-c, --config` — Path to harness-linter.yml (default: "./harness-linter.yml")
+- `-o, --output` — Override output directory
+- `--clean` — Remove existing files before generating
+- `--dry-run` — Preview without writing files
+- `--json` — Output as JSON
+- `--verbose` — Show detailed output
+
+### `harness linter validate`
+
+Validate harness-linter.yml config
+
+**Options:**
+
+- `-c, --config` — Path to harness-linter.yml (default: "./harness-linter.yml")
+- `--json` — Output as JSON
+
+## Maintenance Commands
+
+Inspect built-in + custom maintenance tasks and their persisted outputs
+
+### `harness maintenance list`
+
+List all resolved maintenance tasks (built-in + customTasks)
+
+**Options:**
+
+- `--json` — Emit machine-readable JSON
+- `--path` — Project root path (default: ".")
+
+### `harness maintenance run [taskId]`
+
+Run overdue (default) / selected maintenance tasks; report-first unless --fix
+
+**Options:**
+
+- `--all` — Run all sweep-eligible tasks (not just overdue)
+- `--only` — Comma-separated task ids to run
+- `--skip` — Comma-separated task ids to exclude
+- `--fix` — Dispatch fixes per task type (default: report-only)
+- `--concurrency` — Max parallel tasks (report mode); --fix forces 1
+- `--json` — Emit machine-readable consolidated report
+- `--path` — Project root path (default: ".")
+
+### `harness maintenance show <task-id>`
+
+Show last N persisted runs for a task (from .harness/maintenance/[id]/outputs/)
+
+**Options:**
+
+- `--limit` — Number of runs to show (default: "5")
+- `--json` — Emit machine-readable JSON
+- `--path` — Project root path (default: ".")
+
+## Mcp Commands
+
+Start the MCP (Model Context Protocol) server on stdio
+
+### `harness mcp context-report`
+
+Attribute the always-loaded context surface cost per turn, per tier
+
+**Options:**
+
+- `--tier` — Measure the tool schemas at this tier
+- `--exact` — Use exact /v1/messages/count_tokens counts (needs ANTHROPIC_API_KEY)
+- `--window` — Context-window size to budget against (default: 200000)
+- `--top` — How many top contributors to show (default: 10)
+- `--no-skills` — Skip the platform skill trees
+- `--json` — Emit machine-readable JSON
+
+### `harness mcp list-capabilities`
+
+Audit each MCP tool: read/write/exec scope, network access, and trust tag
+
+**Options:**
+
+- `--by-permission` — Group tools by read/write/exec/network scope
+- `--json` — Emit machine-readable JSON
+
+### `harness mcp refinement-demand`
+
+Report refinement frequency per progressive-context class (demand signal)
+
+**Options:**
+
+- `--json` — Emit machine-readable JSON
+
+## Mcp-guard Commands
+
+Pre-launch OSV malware guard for MCP/npx packages
+
+### `harness mcp-guard cache`
+
+Manage the on-disk OSV advisory cache
+
+### `harness mcp-guard check`
+
+Check every MCP/npx package in .mcp.json against OSV.dev advisories
+
+**Options:**
+
+- `--strict` — Fail closed on network errors (default: fail-open)
+- `--json` — Emit machine-readable JSON
+- `--path` — Project root path (default: ".")
+
+## Migrate Commands
+
+Migrate legacy harness artifact locations to current layout
+
+### `harness migrate backends`
+
+Copy agent.backends (and routing) from harness.orchestrator.md into harness.config.json.
+
+**Options:**
+
+- `--dry-run` — Show what would change without writing
+- `--force` — Overwrite existing agent.backends in harness.config.json
+
+## Models Commands
+
+Inspect and manage local LLM backends. Ships `probe`, model-proposal review (proposals/approve/reject), `refresh` (force a scheduler tick), and `drift` (model-update regression sentinel).
+
+### `harness models approve <id>`
+
+Approve a model proposal (drives the installer + pool update). Requires the orchestrator to be running and HARNESS_ADMIN_TOKEN.
+
+### `harness models drift`
+
+Detect when the configured model identity (agent.backends[*].model) changes vs the last-seen value and record a sentinel event. Detect + report only. Reads the global --config / --json flags.
+
+**Options:**
+
+- `--history` — Print the append-only sentinel changelog and exit.
+- `--check` — Exit non-zero on unacknowledged material drift (no record written).
+- `--ack` — Acknowledge the current model identity, re-pinning the baseline (append-only).
+
+### `harness models probe`
+
+Probe a local backend's /v1/models endpoint and report which configured model is loaded.
+
+**Options:**
+
+- `--backend` — Name of an entry in agent.backends. Defaults to the first local/pi entry.
+- `--endpoint` — Override the backend endpoint (bypasses harness.config.json).
+- `--api-key` — Override the API key.
+- `--json` — Print machine-readable JSON instead of a human summary.
+
+### `harness models proposals`
+
+List model proposals in the local review queue (defaults to pending).
+
+**Options:**
+
+- `--status` — Filter by status (open | approved | rejected | all). (default: "open")
+
+### `harness models refresh`
+
+Force a background-scheduler refresh tick now (emits any model proposals). Exits non-zero on an O4 hard failure (HuggingFace unreachable AND no benchmark snapshot). Requires the orchestrator running + HARNESS_ADMIN_TOKEN.
+
+### `harness models reject <id>`
+
+Reject a model proposal with a one-line reason (records the decision + fires the bus event). Requires the orchestrator to be running and HARNESS_ADMIN_TOKEN.
+
+**Options:**
+
+- `--reason` — Why the proposal is being rejected
+
+## Notifications Commands
+
+Manage notification sinks (Slack and others)
+
+### `harness notifications test <sink-id>`
+
+Send a synthetic notification.test event through the named sink
+
+**Arguments:**
+
+- `sink-id` (required) — Sink id from harness.config.json `notifications.sinks[].id`
+
+**Options:**
+
+- `--message` — Override the default test message
+
+## Orchestrator Commands
+
+### `harness orchestrator black-box`
+
+Inspect durable per-run orchestrator flight records (provenance, verdicts, tool-use)
+
+### `harness orchestrator run`
+
+Run the orchestrator daemon
+
+**Options:**
+
+- `-w, --workflow` — Path to harness.orchestrator.md (default: "harness.orchestrator.md")
+- `--headless` — Run without TUI (server-only mode for use with web dashboard)
+
+## Perf Commands
+
+Performance benchmark and baseline management
+
+### `harness perf baselines`
+
+Manage performance baselines
+
+### `harness perf bench [glob]`
+
+Run benchmarks via vitest bench
+
+### `harness perf critical-paths`
+
+Show resolved critical path set (annotations + graph inference)
+
+### `harness perf report`
+
+Full performance report with metrics, trends, and hotspots
+
+## Persona Commands
+
+Agent persona management commands
+
+### `harness persona generate <name>`
+
+Generate artifacts from a persona config
+
+**Arguments:**
+
+- `name` (required) — Persona name (e.g., architecture-enforcer)
+
+**Options:**
+
+- `--output-dir` — Output directory (default: ".")
+- `--only` — Generate only: ci, agents-md, runtime
+- `--platform` — CI platform for the ci artifact (default: "github")
+
+### `harness persona list`
+
+List available agent personas
+
+### `harness persona sync-workflows`
+
+Generate/verify committed CI workflows for persona-declared triggers
+
+**Options:**
+
+- `--check` — Verify committed workflows are up to date; exit non-zero on drift
+- `--runner` — How the CLI is invoked in each step: "npx" (published CLI, default) or "workspace" (build from source) (default: "npx")
+- `--advisory` — Emit continue-on-error jobs (report findings without failing the check)
+
+## Proposals Commands
+
+Skill-proposal review queue
+
+### `harness proposals approve <id>`
+
+Approve a proposal (runs the soundness-review gate then promotes). Requires the orchestrator to be running.
+
+### `harness proposals list`
+
+List skill proposals in the local queue
+
+**Options:**
+
+- `--status` — Filter by status — one of open | gate-running | gate-failed | approved | rejected | all (default: "open")
+
+### `harness proposals reject <id>`
+
+Reject a proposal with a one-line reason
+
+**Options:**
+
+- `--reason` — Why the proposal is being rejected
+
+### `harness proposals show <id>`
+
+Show a single proposal in full
+
+### `harness proposals status`
+
+Report queue counts and whether each emission surface (manual emit, retrospection) is live or dormant. Provider resolvability is inferred from env-var presence, not by constructing a provider. Use the global --json flag for the machine-readable ProposalsStatusReport.
+
+## Pulse Commands
+
+Pulse (read-side observability) commands
+
+### `harness pulse run`
+
+Run a pulse: query configured adapters, sanitize, assemble single-page report
+
+**Options:**
+
+- `--lookback` — Lookback window (e.g. 24h, 7d). Defaults to pulse.lookbackDefault.
+- `--non-interactive` — Emit single-line JSON status on stdout instead of headlines+path. Auto-detected when stdout is not a TTY.
+- `--config` — Path to harness.config.json (default: "harness.config.json")
+- `--output-dir` — Directory to write the report into (default: "docs/pulse-reports")
+
+## Rehearse Commands
+
+Rehearse an agent against a deliberately-broken fixture and score how well it recovers
+
+### `harness rehearse list`
+
+List the available rehearsal fixtures and their planted failure modes
+
+### `harness rehearse score`
+
+Score a recovery attempt against a fixture (0-100 + pass/partial/fail tier)
+
+**Options:**
+
+- `--fixture` — Fixture id to score against
+- `--recovery` — Path to a JSON recovery record
+- `--report-only` — Always exit 0, even on a fail-tier score
+
+### `harness rehearse show <fixture-id>`
+
+Print one fixture manifest: what was planted, the expected fix, and the rubric
+
+## Roadmap Commands
+
+Roadmap management
+
+### `harness roadmap install-hook`
+
+Install a git pre-commit hook that regenerates docs/roadmap.md from the docs/roadmap.d shards
+
+**Options:**
+
+- `--cwd` — Project root (defaults to the current working directory)
+- `--mechanism` — Hook mechanism: "auto" (default), "husky", or "git" (raw .git/hooks) (default: "auto")
+- `--command` — Regen command the hook runs (default: "npx harness roadmap regen")
+- `--force` — Install even when the project is not sharded (no docs/roadmap.d)
+- `--format` — Output format: "human" (default) or "json" (single JSON object for CI consumers) (default: "human")
+
+### `harness roadmap migrate`
+
+Migrate the project roadmap to a different storage mode
+
+**Options:**
+
+- `--to` — Migration target: "file-less" or "file-backed"
+- `--dry-run` — Print the migration plan without making any changes
+- `--format` — Output format: "human" (default) or "json" (single JSON object for CI consumers) (default: "human")
+
+### `harness roadmap reconcile`
+
+Flip roadmap rows whose linked GitHub issue is closed to done. Offline mode flips only issues closed as 'completed' (a 'not planned'/'wontfix' close is left untouched); the PR-merge auto-done workflow remains authoritative for cross-repo correctness.
+
+**Options:**
+
+- `--cwd` — Project root (defaults to the current working directory)
+- `--from-issues` — comma-separated issue numbers to reconcile against the configured repo (authoritative; skips the network fetch)
+- `--from-refs` — comma-separated owner/repo#number closing-issue references (preferred; cross-repo safe; skips the network fetch)
+
+### `harness roadmap referenced-issues`
+
+Parse issue references (#N, Closes/Fixes/Resolves #N, owner/repo#N) from stdin text (PR body + title) and print each issue number on its own line. Backstop for auto-done when a PR's closing keyword is malformed.
+
+### `harness roadmap regen`
+
+Regenerate the aggregate from the shard directory (docs/roadmap.d)
+
+**Options:**
+
+- `--cwd` — Project root (defaults to the current working directory)
+- `--dry-run` — Report what would be regenerated without writing anything
+- `--allow-unreadable-history` — Recovery hatch: carry an unparseable "## Assignment History" section into the aggregate verbatim instead of refusing (also settable as HARNESS_ROADMAP_ALLOW_UNREADABLE_HISTORY=1)
+- `--format` — Output format: "human" (default) or "json" (single JSON object for CI consumers) (default: "human")
+
+### `harness roadmap shard`
+
+Migrate docs/roadmap.md to per-row shards under docs/roadmap.d
+
+**Options:**
+
+- `--cwd` — Project root (defaults to the current working directory)
+- `--dry-run` — Report the migration plan without writing anything
+- `--force` — Proceed even if docs/roadmap.d already exists
+- `--format` — Output format: "human" (default) or "json" (single JSON object for CI consumers) (default: "human")
+
+### `harness roadmap sync`
+
+Full bidirectional roadmap<->tracker sync (push planning fields, pull execution fields, write back). DRY RUN BY DEFAULT — pass --apply to write anything. Exit codes: 0 converged, 2 error/misconfiguration, 3 ZERO DENOMINATOR (examined nothing — an abstention, never a pass).
+
+**Options:**
+
+- `--cwd` — Project root (defaults to the current working directory)
+- `--apply` — actually write; without this the command only reports intended changes
+- `--no-create` — never create a ticket for a row lacking an externalId (report the skip instead) — an unattended job must not invent issues
+- `--no-state-change` — CI-SAFE MODE: never patch an issue open/closed state, so labels converge but no issue can be closed or reopened; leave closure to the PR-merge auto-done path
+- `--force` — allow status regressions (done -> in-progress). OVERRIDES the human-always-wins rule; do not use unattended
+- `--json` — emit the machine-readable result instead of prose
+
+### `harness roadmap triage`
+
+Read-only triage report: score every actionable roadmap item with the four-lever scoping probe and rank dispatchability. Gated behind roadmap.autoTriage.enabled (default off); never writes. Offline by default (holds to human without a live model). With --brainstorm, additionally run the autonomous brainstorm per candidate, emitting a drafted spec (docs only) or a halt handoff (fork + reason) — still no dispatch.
+
+**Options:**
+
+- `--brainstorm` — Run the autonomous brainstorm per candidate: draft a spec (docs only) or halt to a human at the first fork it can not confidently recommend. No dispatch, no execution.
+- `--only` — Process ONLY roadmap items whose title contains this substring (case-insensitive). Lets you triage/brainstorm a single item, e.g. --only "prefer-execfile".
+- `--limit` — Process at most N items (applied after --only). Useful for a quick partial scan.
+- `--offline` — Force the pure static path — never consult the local model. A fast scan that holds every item to a human (byte-identical to running without a resolvable model).
+
+### `harness roadmap unshard`
+
+Reassemble the aggregate from shards and remove docs/roadmap.d
+
+**Options:**
+
+- `--cwd` — Project root (defaults to the current working directory)
+- `--dry-run` — Preview the reassembly without writing or deleting the shard dir
+- `--format` — Output format: "human" (default) or "json" (single JSON object for CI consumers) (default: "human")
+
+## Rollback Commands
+
+Post-ship revert circuit breaker (propose-only in v1)
+
+### `harness rollback evaluate`
+
+Classify a merged PR for revert-readiness and, if ready, propose a revert PR
+
+**Options:**
+
+- `--pr` — target merged PR number
+- `--trigger` — what fired this evaluation (default: "signal")
+- `--reason` — human-readable reason recorded on the proposal
+- `--dry-run` — print the revert PR body without opening a PR
+
+### `harness rollback sweep`
+
+Read the signal timeline and propose reverts for threshold crossings (signal arm)
+
+## Routing Commands
+
+Inspect routing config, trace decisions, and read AMR telemetry + status
+
+### `harness routing config`
+
+Print active routing config and resolved fallback chains
+
+**Options:**
+
+- `--json` — Emit JSON to stdout instead of human-readable text
+
+### `harness routing decisions`
+
+List recent routing decisions from the orchestrator ring buffer (Spec B F8)
+
+**Options:**
+
+- `--skill` — Filter by useCase.skillName
+- `--mode` — Filter by useCase.cognitiveMode
+- `--backend` — Filter by chosen backendName
+- `--last` — Limit to the N most recent decisions
+- `--json` — Emit JSON to stdout instead of human-readable text
+
+### `harness routing status`
+
+Live routing status: budget spend-vs-cap, escalated units, provider allowlist (AMR)
+
+**Options:**
+
+- `--json` — Emit JSON to stdout instead of human-readable text
+
+### `harness routing telemetry`
+
+Routing telemetry: per-decision tier/backend/cost + tier distribution (AMR)
+
+**Options:**
+
+- `--last` — Show only the N most recent decisions in the per-decision table
+- `--json` — Emit JSON to stdout instead of human-readable text
+
+### `harness routing trace`
+
+Dry-run a routing decision without dispatching (Spec B F7)
+
+**Options:**
+
+- `--skill` — Skill name to trace
+- `--mode` — Cognitive mode to trace (or attach to --skill per spec D12)
+- `--complexity` — Synthetic complexity (trivial|simple|moderate|complex) — dry-run only
+- `--risk` — Synthetic risk band (low|high) — dry-run only
+- `--json` — Emit JSON to stdout instead of human-readable text
+
+## Rules Commands
+
+Enforced-rule introspection commands
+
+### `harness rules provenance`
+
+Advisory report joining enforced rules to the incidents that motivated them (ADR 0100); never blocks
+
+## Skill Commands
+
+Skill management commands
+
+### `harness skill create <name>`
+
+Scaffold a new community skill
+
+**Arguments:**
+
+- `name` (required) — Skill name (kebab-case)
+
+**Options:**
+
+- `--description` — Skill description
+- `--type` — Skill type: rigid or flexible (default: "flexible")
+- `--platforms` — Comma-separated platforms (default: claude-code)
+- `--triggers` — Comma-separated triggers (default: manual)
+- `--output-dir` — Output directory (default: agents/skills/claude-code/)
+
+### `harness skill info <name>`
+
+Show metadata for a skill
+
+**Arguments:**
+
+- `name` (required) — Skill name (e.g., harness-tdd)
+
+### `harness skill list`
+
+List available skills
+
+**Options:**
+
+- `--installed` — Show only community-installed skills
+- `--local` — Show only project-local skills
+- `--all` — Show all skills (default)
+
+### `harness skill publish`
+
+Validate and publish a skill to @harness-skills on npm
+
+**Options:**
+
+- `--dry-run` — Run validation and generate package.json without publishing
+- `--dir` — Skill directory (default: current directory)
+- `--registry` — Use a custom npm registry URL
+
+### `harness skill run <name>`
+
+Run a skill (outputs SKILL.md content with context preamble)
+
+**Arguments:**
+
+- `name` (required) — Skill name (e.g., harness-tdd)
+
+**Options:**
+
+- `--path` — Project root path for context injection
+- `--complexity` — Rigor level: fast, standard, thorough (default: "standard")
+- `--phase` — Start at a specific phase (for re-entry)
+- `--party` — Enable multi-perspective evaluation
+- `--autonomous` — Headless mode: inject the autonomous-decider preamble so the agent decides every fork at full rigor (recording each decision in the spec) instead of pausing for a human
+- `--backend` — Spec B: one-shot routing override forwarded to the orchestrator as HARNESS_BACKEND_OVERRIDE
+
+### `harness skill search <query>`
+
+Search for community skills on the @harness-skills registry
+
+**Arguments:**
+
+- `query` (required) — Search query
+
+**Options:**
+
+- `--platform` — Filter by platform (e.g., claude-code)
+- `--trigger` — Filter by trigger type (e.g., manual, automatic)
+- `--registry` — Use a custom npm registry URL
+
+### `harness skill update [name]`
+
+Check and update external skill providers (github/npm) to their latest upstream
+
+**Arguments:**
+
+- `name` (optional) — Only consider the provider with this short name
+
+**Options:**
+
+- `--check` — Report only; exit non-zero if any provider is outdated
+- `--global` — Operate on the global (~/.harness) skill lockfile only
+- `--yes` — Skip per-provider confirmation and update all outdated providers
+
+### `harness skill validate [skill-name]`
+
+Validate skill.yaml files and SKILL.md structure
+
+**Arguments:**
+
+- `skill-name` (optional) — Validate only this skill (fails if it is not found)
+
+## Snapshot Commands
+
+Architecture timeline snapshot commands
+
+### `harness snapshot capture`
+
+Capture current architecture metrics as a timeline snapshot
+
+### `harness snapshot list`
+
+List all captured architecture snapshots
+
+### `harness snapshot trends`
+
+Show architecture metric trends over time
+
+**Options:**
+
+- `--last` — Number of recent snapshots to analyze (default: "10")
+- `--since` — Show trends since ISO date
+
+## State Commands
+
+Project state management commands
+
+### `harness state learn <message>`
+
+Append a learning to .harness/learnings.md
+
+**Arguments:**
+
+- `message` (required) — The learning to record
+
+**Options:**
+
+- `--path` — Project root path (default: ".")
+- `--stream` — Target a specific stream
+
+### `harness state reset`
+
+Reset project state (truncates the event log to a fresh default)
+
+**Options:**
+
+- `--path` — Project root path (default: ".")
+- `--stream` — Target a specific stream
+- `--yes` — Skip confirmation prompt
+
+### `harness state show`
+
+Show current project state
+
+**Options:**
+
+- `--path` — Project root path (default: ".")
+- `--stream` — Target a specific stream
+
+### `harness state streams`
+
+Manage state streams
+
+## Taint Commands
+
+Manage sentinel session taint state
+
+### `harness taint clear [sessionId]`
+
+Clear session taint — removes taint file(s) and re-enables destructive operations
+
+### `harness taint status [sessionId]`
+
+Show current taint status for a session or all sessions
+
+## Telemetry Commands
+
+Telemetry identity and status management
+
+### `harness telemetry identify`
+
+Set or clear telemetry identity fields in .harness/telemetry.json
+
+**Options:**
+
+- `--project` — Project name
+- `--team` — Team name
+- `--alias` — User alias
+- `--clear` — Remove all identity fields
+
+### `harness telemetry status`
+
+Show current telemetry consent state, install ID, and identity
+
+**Options:**
+
+- `--json` — Output as JSON
+
+### `harness telemetry synthesize`
+
+Compose adoption, effectiveness, usage, insights, and outcome telemetry into one local report
+
+**Options:**
+
+- `--json` — Emit the machine-readable TelemetrySynthesis object instead of Markdown
+- `--out` — Write the report to a file instead of stdout
+- `--skip` — Omit a section (adoption|effectiveness|usage|insights|outcomes); repeatable (default: [])
+- `--window` — Bound adoption/usage/outcome sources to the trailing N days
+
+### `harness telemetry test`
+
+Send a test event to PostHog and verify connectivity
+
+## Usage Commands
+
+Token usage and cost tracking
+
+### `harness usage daily`
+
+Show per-day token usage and cost
+
+**Options:**
+
+- `--limit` — Number of days to show (default: 7, max: 90) (default: "7")
+- `--days` — Deprecated alias of --limit
+
+### `harness usage latest`
+
+Show the most recently completed session cost summary
+
+### `harness usage session <id>`
+
+Show detailed token breakdown for a specific session
+
+### `harness usage sessions`
+
+List recent sessions with token usage and cost
+
+**Options:**
+
+- `--limit` — Number of sessions to show (default: 10, max: 100) (default: "10")
+
+## Waypoint Commands
+
+Opt-in Waypoint sdlc.\* emission: record fleet artifacts, ship the spool, inspect it
+
+### `harness waypoint record-handoff <file>`
+
+Spool one sdlc.\* event for a written fleet handoff record
+
+### `harness waypoint record-provenance <file>`
+
+Spool one sdlc.\* event for a written fleet provenance.json
+
+### `harness waypoint ship`
+
+Send spooled sdlc.\* events to the configured Waypoint ledger
+
+**Options:**
+
+- `--dry-run` — Report what would ship without sending anything
+- `--limit` — Cap the number of events sent this run
+- `--skip-contract-check` — Ship without checking events against the published sdlc.\* contract first (use when the vendored copy is older than the live ledger)
+
+### `harness waypoint status`
+
+Show spool health: segments, event counts, drops, oldest event age

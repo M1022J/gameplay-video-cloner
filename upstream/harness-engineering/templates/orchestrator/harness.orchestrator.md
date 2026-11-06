@@ -1,0 +1,162 @@
+---
+tracker:
+  kind: roadmap
+  filePath: docs/roadmap.md
+  activeStates: [planned, in-progress]
+  terminalStates: [done]
+polling:
+  intervalMs: 30000
+workspace:
+  root: .harness/workspaces
+hooks:
+  # Install workspace deps so the enforced verify gate can actually run — a fresh
+  # git-worktree workspace has no node_modules, so verify would fail environmentally
+  # and block EVERY local dispatch. Fast via the pnpm store. Adopters on other
+  # ecosystems set their own command (npm ci / pip install -r … / cargo fetch / …).
+  afterCreate: 'pnpm install --prefer-offline'
+  beforeRun: null
+  afterRun: null
+  beforeRemove: null
+  timeoutMs: 60000
+agent:
+  # Named backend definitions (Spec 2). See the Multi-Backend Routing
+  # operator guide in the harness docs for the full schema reference.
+  backends:
+    primary: { type: claude, command: claude }
+    # Local backend for autonomous execution of simple tasks.
+    # `model` accepts a string OR a prefer-and-fallback array — first
+    # match wins after a `/v1/models` probe.
+    local:
+      type: ollama
+      endpoint: http://localhost:1234/v1
+      model: gemma-4-e4b
+      # Qwen3 reasons by default; Ollama /v1 ignores reasoning:false, so disable it
+      disableReasoning: true
+      # model: [gemma-4-e4b, qwen3:8b, deepseek-coder-v2]
+      # Optional: give the local agent tools from MCP servers, merged with its
+      # built-in bash/read_file/write_file. Tools are namespaced `<server>__<tool>`;
+      # a server that fails to start is skipped (never breaks the dispatch). Default
+      # (unset) = built-ins only. See docs/guides/multi-backend-routing.md#mcp-tools.
+      # mcpServers:
+      #   - name: context7        # live library docs — stop coding from stale memory
+      #     command: npx
+      #     args: ['-y', '@upstash/context7-mcp']
+      #   - name: harness          # code_search / ask_graph / review_changes /
+      #     command: harness-mcp    # outcome_eval, run against the agent's workspace
+      #     tools: [code_search, ask_graph, review_changes, outcome_eval, gather_context]
+      #                             # narrow harness's ~95 tools to the read-oriented set
+      #                             # so a local model isn't flooded (omit tools = all).
+  # Routing — controls WHICH backend handles each use case.
+  routing:
+    default: primary
+    quick-fix: local
+    diagnostic: local
+    # Optional: route the intelligence pipeline (sel/pesl) to a local backend.
+    # intelligence:
+    #   sel: local
+    #   pesl: local
+  # Escalation — controls WHETHER a tier dispatches at all (orthogonal to routing).
+  escalation:
+    alwaysHuman: [full-exploration]
+    autoExecute: [quick-fix, diagnostic]
+    primaryExecute: [guided-change]
+    signalGated: []
+    diagnosticRetryBudget: 1
+  maxConcurrentAgents: 1
+  maxTurns: 10
+  maxRetryBackoffMs: 5000
+  maxConcurrentAgentsByState: {}
+  globalCooldownMs: 60000
+  maxRequestsPerMinute: 50
+  maxRequestsPerSecond: 1
+  # Default limits based on Anthropic Tier 3. Adjust according to your account tier.
+  # Tier 1: 40k ITPM / 10k OTPM
+  # Tier 2: 200k ITPM / 40k OTPM
+  # Tier 3: 400k ITPM / 80k OTPM
+  # Tier 4: 1m ITPM / 200k OTPM
+  maxInputTokensPerMinute: 400000
+  maxOutputTokensPerMinute: 80000
+  turnTimeoutMs: 300000
+  readTimeoutMs: 30000
+  stallTimeoutMs: 60000
+intelligence:
+  enabled: true
+  requestTimeoutMs: 180000
+server:
+  port: 8080
+---
+
+# Prompt Template
+
+You are an expert coding agent working on the Harness Engineering project.
+Your goal is to implement the following issue using the standard Harness Engineering workflow.
+
+## Issue: {{ issue.title }}
+
+**Identifier:** {{ issue.identifier }}
+**Description:** {{ issue.description }}
+
+## Standard Workflow
+
+Follow these steps exactly, using the corresponding slash commands to ensure
+high-quality, architecturally sound delivery:
+
+<!-- This slash-command workflow targets Claude-shaped backends. A backend-specific
+     variant, `harness.orchestrator.local.md`, is auto-selected for `local`/`pi`
+     backends (which lack `/harness:*` slash commands) and expresses the same
+     workflow via bash `harness <gate>` CLI calls. See ADR 0071. -->
+
+1. **Brainstorming:** Use `/harness:brainstorming` to explore the problem space
+   and draft a technical proposal in `docs/changes/`. The spec MUST include an
+   Integration Points section defining how the feature connects to the system.
+2. **Planning:** Use `/harness:planning` to create a detailed implementation plan.
+   The plan MUST include integration tasks derived from the spec's Integration Points.
+3. **Execution:** Use `/harness:execution` to implement the changes task-by-task,
+   including integration tasks (registrations, ADRs, doc updates).
+4. **Verification:** Use `/harness:verification` to ensure the implementation is
+   complete, wired correctly, and meets all requirements.
+5. **Integration:** Use `/harness:integration` to verify that system wiring,
+   knowledge materialization, and documentation updates are complete per the
+   integration tier.
+6. **Code Review:** Use `/harness:code-review` and `/harness:pre-commit-review`
+   to perform a final quality check before completing the task.
+   6b. **Compound (when applicable):** Run `/harness:compound` when ANY of these
+   three concrete triggers fired during this issue:
+   (a) `/harness:debugging` was invoked at any point (regardless of outcome),
+   (b) the fix required more than one commit on the issue branch, or
+   (c) execution involved >1 attempt (`Attempt Number` above is greater than 1).
+   Otherwise skip silently. The triggers are mechanical — no judgment required.
+   6.5. **Outcome Eval:** Use `/harness:outcome-eval` to judge whether the
+   implementation satisfied its spec. It gathers the diff and test output,
+   resolves the spec's acceptance section, and emits a confidence-rated
+   `OutcomeVerdict`. **Verdict authority (derived in TypeScript, never from the
+   LLM): a high-confidence `NOT_SATISFIED` BLOCKS ship — halt here and fix the
+   implementation or spec before proceeding; every other verdict (all
+   `SATISFIED`, all `INCONCLUSIVE`, and medium/low `NOT_SATISFIED`) is advisory
+   — report it and continue.**
+7. **Ship:** When the review is clean, you are pre-authorized to ship without asking:
+   - Create a topic branch if you are still on `main`/`master` (e.g. `feat/{{ issue.identifier }}`).
+   - Stage your changes and create a descriptive commit (Conventional Commits style).
+   - Push the branch with `git push -u origin HEAD`.
+   - Open a pull request. Use a HEREDOC for the body to preserve newlines:
+     ```
+     gh pr create --title "<title>" --body "$(cat <<'EOF'
+     ## Summary
+     <body content with real newlines>
+     EOF
+     )"
+     ```
+     Or use `gh pr create --fill` to auto-generate from commit messages.
+   - Report the PR URL as your final output, then stop. Do not await further instructions — this is the terminal step of the workflow.
+
+## Rules
+
+- Always verify your changes with `harness validate`.
+- Adhere to the architectural constraints defined in `harness.config.json`.
+- For non-trivial learnings, run `/harness:compound` (writes structured docs to
+  `docs/solutions/<track>/<category>/`). The `.harness/learnings.md` file remains
+  for ephemeral session notes only and is not preserved as compounding knowledge.
+- Step 7 (Ship) is part of the standard workflow. Do not pause to ask for commit authorization — completing the issue means the PR has been opened.
+- Step 6.5 (Outcome Eval) is a gate: a high-confidence `NOT_SATISFIED` verdict blocks Ship. Do not proceed to step 7 until the verdict is non-blocking.
+
+Attempt Number: {{ attempt }}
