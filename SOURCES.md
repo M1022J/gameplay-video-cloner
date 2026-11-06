@@ -87,3 +87,9 @@ SKILL.md 更新 + 新脚本 3 + 新参考 4）与新版手册已一并整合（`
 | # | 来源（GitHub） | Commit | 整合位置 | 收录范围与说明 |
 |---|---|---|---|---|
 | 42 | [InfiniteMindData/Roblox-Game-Remaker](https://github.com/InfiniteMindData/Roblox-Game-Remaker) | `fa5213de5852a7ed23473240ad1e381f9d7d7f0a` | `skills/roblox-game-remaker/`（仓库其余文件在其 `upstream-repo/`） | 全仓（125 文件）。许可证：MIT。闸门式复刻流程（研究→逐帧测量→证据化拆解→建造→测量比对修复）+ 24 个实测脚本（motion_track 跳跃重力拟合、visual_compare SSIM/色差等）+ 16 篇参考；Roblox 专属部分（翻译层/Rojo 模板/Studio MCP/VR）仅目标为 Roblox 时用，测量与验证层与引擎无关 |
+
+## 2026-11-07 增补（自研技能 game-render-to-blueprint）
+
+| # | 来源 | 日期 | 整合位置 | 收录范围与说明 |
+|---|---|---|---|---|
+| 43 | 本仓自研（《变废为宝》UI 重构复盘蒸馏，用户 2026-11-07 令沉淀为技能并融入本仓） | 2026-11-07 | `skills/game-render-to-blueprint/` | 效果图即施工图方法：逐元素量测原图坐标→参考坐标系绝对摆位+整幅等比缩放；组件离线预成型（三态齐全、运行时不做九宫格）；内缩取量测值；旧裁决与原图冲突先上报；无专属图的页面标「风格推及」；对图逐元素验收。源于远端实现（reference_view 坐标摆位）一次对齐、而流式布局追赶五轮未收敛的对照教训 |
