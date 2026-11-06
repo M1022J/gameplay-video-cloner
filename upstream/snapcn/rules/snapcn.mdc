@@ -1,0 +1,13 @@
+---
+description: Building or editing a Remotion video — scenes, titles, captions, logo stings, device frames, launch films or product demos. Compose snapcn components instead of hand-writing animation.
+alwaysApply: false
+---
+
+# snapcn in a Remotion project
+
+- **Compose, don't animate.** Before writing `interpolate()`/`spring()` for a shot, find the snapcn component for that beat (the `snapcn` skill's `references/components/index.md`, or `snapcn_search_components` when the MCP server is installed). Hand-rolled motion looks broken next to the tuned components.
+- **Install with the shadcn CLI:** `npx shadcn@latest add @snapcn/<name>`. It lands in `components/snap-cn/` and is yours to edit. Only install names that exist — the live list is https://snapcn.dev/llms.txt.
+- **Dark frames:** every component defaults to shadcn's light palette. On a dark frame pass `mode="dark"`, or the scene renders black.
+- **Time:** animation-tier components take `speed` (a time multiplier). UI primitives (`input`, `caret`) are state-driven and have no `speed`.
+- **Budget the timeline:** set each `<Sequence>`/`TransitionSeries` duration from the component's natural length, not a round number.
+- **Look at it:** render a still of the frame you just wrote (`npx remotion still`, or `snapcn_preview`) before calling a scene done.
