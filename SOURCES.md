@@ -103,3 +103,9 @@ SKILL.md 更新 + 新脚本 3 + 新参考 4）与新版手册已一并整合（`
 | 44 | [abi/screenshot-to-code](https://github.com/abi/screenshot-to-code) | MIT | `skills/game-render-to-blueprint/`（融合方法一） | 截图/效果图转前端代码工具（81k star）；吸收其分块还原与「生成→截图→对照→修块」迭代收敛策略、原图素材优先提取复用 |
 | 45 | [NoviScl/Design2Code](https://github.com/NoviScl/Design2Code)（斯坦福 SALT-Lab，论文 arXiv:2403.03163）+ [YaoMarkMu/UI2Code](https://github.com/YaoMarkMu/UI2Code) | Design2Code 为 MIT；UI2Code 仓库 API 未返回许可证信息（待核） | `skills/game-render-to-blueprint/`（融合方法二） | 吸收节点层级树拆解（容器嵌套/对齐约束/层叠）、文字先行提取、块级四维评测（块匹配/文字/位置/颜色）驱动的自修正回路 |
 | 46 | [anthropics/skills · frontend-design](https://github.com/anthropics/skills/tree/main/skills/frontend-design)（Anthropic 官方技能，其目录自带 LICENSE.txt）；索引：[travisvn/awesome-claude-skills](https://github.com/travisvn/awesome-claude-skills)、[hesreallyhim/awesome-claude-code](https://github.com/hesreallyhim/awesome-claude-code) | 见其目录 LICENSE.txt；合集为索引引用 | `skills/game-render-to-blueprint/`（融合方法三） | 吸收「AI 默认脸」清单（奶油底+衬线+陶土、近黑+酸绿、报纸细线、SaaS 卡片套件、模板眉题/中点串/箭头尾巴等）与克制原则，适配到风格推及页与文案；有定版效果图时效果图优先于本节 |
+
+## 2026-11-07 增补三（防糊弄铁律总闸门融入 #43）
+
+| # | 来源 | Commit | 整合位置 | 收录范围与说明 |
+|---|---|---|---|---|
+| 47 | 用户自备（2026-11-07 提供，IRONCLAD ANTI-SLOP & EXECUTION GATE） | —（非 GitHub 上游） | `skills/game-render-to-blueprint/`（融入方法五） | 全量原文两件：`ANTI_SLOP_GATE.md`（四道硬闸门：Gate 1 技能/脚本调用锁、Gate 2 视觉零遗漏清点锁、Gate 3 代码零省略与美术全矢量化锁、Gate 4 交付自检与局部冻结锁）+ `verify_no_slop.py`（违禁省略词黑名单 / SVG 与 Path 数量门槛 / 交互函数数量门槛的硬性验收脚本）。按用户令加入第 43 号技能 game-render-to-blueprint 内，作为施工图还原的防糊弄交付闸门 |
