@@ -1,0 +1,67 @@
+{
+  "name": "vibecosystem",
+  "version": "3.5.0",
+  "description": "Profile-based Claude runtime: 138 agents, 296 skills, 74 hooks in the catalog; bounded Codex worker",
+  "type": "module",
+  "bin": {
+    "vibecosystem": "./bin/cli.mjs",
+    "vibeco": "./tools/vibeco/vibeco.mjs"
+  },
+  "files": [
+    "agents/",
+    "skills/",
+    ".codex/",
+    "hooks/dist/",
+    "rules/",
+    "profiles/",
+    "tools/vibeco/",
+    "tools/install-runtime.mjs",
+    "tools/profile-runtime.mjs",
+    "tools/dashboard/server.js",
+    "tools/dashboard/index.html",
+    "tools/dashboard/dashboard.css",
+    "tools/dashboard/package.json",
+    "tools/dashboard/package-lock.json",
+    "tools/dashboard/README.md",
+    "plugin.json",
+    "bin/",
+    "install.sh",
+    "install-codex.sh",
+    "install-remote.sh",
+    "docs/codex-setup.md",
+    "AGENTS.md",
+    "hooks/hooks.json",
+    "tools/register-hooks.mjs"
+  ],
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "test:installers": "bash tests/validate-claude-installer.sh && bash tests/validate-codex-installer.sh",
+    "benchmark:payload": "node tests/benchmark-core-payload.mjs",
+    "benchmark:context": "node tests/benchmark-context-budget.mjs"
+  },
+  "keywords": [
+    "claude-code",
+    "ai",
+    "agents",
+    "skills",
+    "hooks",
+    "self-learning",
+    "code-review",
+    "tdd",
+    "devops",
+    "security"
+  ],
+  "author": "vibeeval (https://github.com/vibeeval)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vibeeval/vibecosystem.git"
+  },
+  "homepage": "https://github.com/vibeeval/vibecosystem#readme",
+  "bugs": {
+    "url": "https://github.com/vibeeval/vibecosystem/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/schemas/plugin-marketplace.schema.json",
+  "name": "vibecosystem",
+  "displayName": "vibecosystem - AI Software Team",
+  "description": "Profile-based coding runtime. The catalog contains 138 agents, 296 skills and 74 hooks; core installs a selected subset.",
+  "version": "3.5.0",
+  "author": {
+    "name": "vibeeval",
+    "url": "https://github.com/vibeeval",
+    "twitter": "@vibeeval"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vibeeval/vibecosystem"
+  },
+  "license": "MIT",
+  "categories": [
+    "developer-tools",
+    "code-quality",
+    "testing",
+    "security",
+    "ai-agents"
+  ],
+  "keywords": [
+    "claude-code",
+    "agents",
+    "skills",
+    "hooks",
+    "self-learning",
+    "code-review",
+    "tdd",
+    "security",
+    "multi-agent",
+    "ai-team"
+  ],
+  "install": {
+    "method": "npm",
+    "command": "npx vibecosystem init"
+  },
+  "components": {
+    "agents": 138,
+    "skills": 296,
+    "hooks": 74,
+    "rules": 20
+  },
+  "features": [
+    "Lean core profile with opt-in quality, context, memory and orchestration",
+    "Bounded context injection with explicit character limits",
+    "Installer ownership tracking and backups",
+    "Prebuilt ESM hooks with optional dependencies documented",
+    "Codex luna_worker adapter with gpt-5.6-luna/max",
+    "Local hook health and estimated/provider usage diagnostics",
+    "Optional local monitoring dashboard"
+  ],
+  "compatibility": {
+    "claude-code": ">=1.0.0",
+    "node": ">=18.0.0"
+  },
+  "screenshots": [],
+  "changelog": "https://github.com/vibeeval/vibecosystem/blob/main/CHANGELOG.md"
+}
