@@ -5,7 +5,7 @@
 
 | # | 来源（GitHub） | Commit | 整合位置 | 收录范围与说明 |
 |---|---|---|---|---|
-| 1 | [obra/superpowers](https://github.com/obra/superpowers) | `2ce8aa15d05bd57213e6f746f953aafb7ded7a8b` | `upstream/superpowers/` | 全仓。本 skill 用其 `skills/dispatching-parallel-agents` 与 `skills/subagent-driven-development` |
+| 1 | [obra/superpowers](https://github.com/obra/superpowers) | `22f0b463e7a5e579904dd6211a520321035526f7` | `upstream/superpowers/` | 全仓。本 skill 用其 `skills/dispatching-parallel-agents` 与 `skills/subagent-driven-development` |
 | 2 | [kieranklaassen — Gist 4f2aba89](https://gist.github.com/kieranklaassen/4f2aba89594a4aea4ad64d753984b2ea) | `f9926ad244b48abc93f6d6a7352d61c9a7a4b8d2` | `upstream/orchestrating-swarms/SKILL.md` | 手册写作仓库 `kieranklaassen/orchestrating-swarms`，该仓库不存在；其内容实为这篇 Gist《Claude Code Swarm Orchestration Skill》，按 Gist 原文收录 |
 | 3 | [sickn33/antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills) | `828257c3037dc7c3c3ec987decc5a603025a0ce5` | `upstream/antigravity-subagent-orchestrator/` | 原仓 466MB（数千个无关 skill），仅收录本 skill 引用的 `skills/subagent-orchestrator/` + 原仓 LICENSE/README |
 | 4 | [qodex-ai/ai-agent-skills](https://github.com/qodex-ai/ai-agent-skills) | `6ea9f00885c5dc5e6d9435d443dbf7d9ce865e29` | `upstream/qodex-multi-agent-orchestration/` | 手册写作 `qodex-ai/multi-agent-orchestration`（仓库不存在），正确仓库为 ai-agent-skills；仅收录其 `skills/multi-agent-orchestration/` + 原仓 LICENSE/README |
@@ -13,11 +13,11 @@
 | 6 | [GenielabsOpenSource/spine-animation-ai](https://github.com/GenielabsOpenSource/spine-animation-ai) | `702b71689cac826efee942ee4564fef9560d6ef8` | `upstream/spine-animation-ai/` | 全仓（演示媒体为二进制，见 `docs/BINARY_FILES.md`）。许可证：PolyForm Noncommercial 1.0.0 |
 | 7 | [BowTiedSwan/rive-skills](https://github.com/BowTiedSwan/rive-skills) | `e64aa14cfdc4c3d0a92a8a0b14be4aa2bb911bdb` | `upstream/rive-skills/` | 全仓 |
 | 8 | [composio-community/opencode-skills](https://github.com/composio-community/opencode-skills) | `5076f6673e5bf8b1f46dc5e934d1e3dd37250e10` | `upstream/opencode-blender-rigging-animation/` | 仅收录本 skill 引用的 `skills/blender-rigging-animation/` + 原仓 README |
-| 9 | [arjun988/blender-skills](https://github.com/arjun988/blender-skills) | `8f778d2405a214b508d4c7d80742be8e43acdd52` | `upstream/blender-skills/` | 全仓 |
+| 9 | [arjun988/blender-skills](https://github.com/arjun988/blender-skills) | `904f095d8f36a6e72adaebb08d07f884a074743d` | `upstream/blender-skills/` | 全仓 |
 | 10 | [ybuild-ai/ai-game-art-pipeline-skill](https://github.com/ybuild-ai/ai-game-art-pipeline-skill) | `ed4a2ce1a94370d5962c7d079cd9404a863e02c7` | `upstream/ai-game-art-pipeline-skill/` | 全仓（media 图片为二进制，见 `docs/BINARY_FILES.md`） |
-| 11 | [video-db/skills](https://github.com/video-db/skills) | `b47b587e282bc95a0ec4e8a25fc72a8600941341` | `upstream/videodb-skills/` | 全仓 |
+| 11 | [video-db/skills](https://github.com/video-db/skills) | `f985577fba97705ed937cc707c3a67e35f23faf5` | `upstream/videodb-skills/` | 全仓 |
 | 12 | [PlayableIntelligence/game-creator](https://github.com/PlayableIntelligence/game-creator) | `53676bd2a524989745ce7cbd4128c17e8a20dd3d` | `upstream/game-creator/` | 收录 `skills/ agents/ templates/ scripts/ tests/` 与根文档；**未收录** `assets/`（140MB 媒体库）、`examples/`（70MB 示例游戏）、`site/`（官网）与 `submodules/`（`skills/playdotfun`、`skills/unity-mcp` 原为指向 submodules 的符号链接，未初始化，故一并略过）——均为本 skill 未引用的部分，需要时按 commit 从上游取 |
-| 13 | [gamedev-skills/awesome-gamedev-agent-skills](https://github.com/gamedev-skills/awesome-gamedev-agent-skills) | `184b72be02884f782a0058f2eeae2ce4277453e4` | `upstream/awesome-gamedev-agent-skills/` | 全仓（横幅图为二进制，见 `docs/BINARY_FILES.md`）。许可证：Apache-2.0 |
+| 13 | [gamedev-skills/awesome-gamedev-agent-skills](https://github.com/gamedev-skills/awesome-gamedev-agent-skills) | `19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9` | `upstream/awesome-gamedev-agent-skills/` | 全仓（横幅图为二进制，见 `docs/BINARY_FILES.md`）。许可证：Apache-2.0 |
 | 14 | [Donchitos/Claude-Code-Game-Studios](https://github.com/Donchitos/Claude-Code-Game-Studios) | `05ad7c8a5b8aa2aa86bbd3439ae7cf7295cac418` | `upstream/claude-code-game-studios/` | 全仓。许可证：MIT |
 
 ## 本地依赖（已在本机验证齐全）
@@ -67,18 +67,18 @@ SKILL.md 更新 + 新脚本 3 + 新参考 4）与新版手册已一并整合（`
 | 27 | [GAIR-NLP/VidaForge](https://github.com/GAIR-NLP/VidaForge) | `fbbc745f6f74025a1c8c18e9ef610c0efccb0a4c` | `upstream/vidaforge/` | 全仓。长视频理解 |
 | 28 | [mugnimaestra/video-frames-skill](https://github.com/mugnimaestra/video-frames-skill) | `f0d30f9dc8274aa664ba68b528cd3b6d13dd3509` | `upstream/video-frames-skill/` | 全仓。抽帧 skill |
 | 29 | [browser-use/video-use](https://github.com/browser-use/video-use) | `43cfc566833548093455c9d4a46bd69913b7e552` | `upstream/video-use/` | 全仓。视频操作 |
-| 30 | [Breakthrough/DVR-Scan](https://github.com/Breakthrough/DVR-Scan) | `52aa2288dd45e7d607eb7b6356b1e84e270e63e5` | `upstream/dvr-scan/` | 摘录：源码 + 文档（未收 dist/ 安装包、tests/ 样例视频）。运动事件检测（微差条来源） |
+| 30 | [Breakthrough/DVR-Scan](https://github.com/Breakthrough/DVR-Scan) | `5dd53b3750c4544e66d66b09d9b468490d5514cb` | `upstream/dvr-scan/` | 摘录：源码 + 文档（未收 dist/ 安装包、tests/ 样例视频）。运动事件检测（微差条来源） |
 | 31 | [snapcndev/snapcn](https://github.com/snapcndev/snapcn) | `9c57e1b6196d7c895d74ec52934298120b22ffb6` | `upstream/snapcn/` | 摘录：根文档（含 MOTION.md）+ `.claude/skills/motion-quality` + skills/rules（未收网站应用本体 app/registry/components 等）。motion-quality：0.01px 亚像素轨迹 |
 | 32 | [HKUDS/VideoRAG](https://github.com/HKUDS/VideoRAG) | `c412a093a820ef7a0e0dda31076ed871136198b3` | `upstream/videorag/` | 全仓。长视频 RAG（双向因果账本来源，含 MovieChat 思路） |
 | 33 | [HKUDS/VideoAgent](https://github.com/HKUDS/VideoAgent) | `f207987e3cffb554aaa6ffdbe733efb30f4b51ed` | `upstream/videoagent/` | 摘录：本体代码 + VideoEdit + 文档（未收 76M 的 assets/ 媒体与 tools/ 内嵌的第三方 TTS/ASR 项目群） |
 | 34 | [Huc91/pixel-perfect-skill](https://github.com/Huc91/pixel-perfect-skill) | `2c677882743ebf0fcdc0bedebf055283182a04ce` | `upstream/pixel-perfect-skill/` | 全仓。像素级还原 |
-| 35 | [garrytan/gstack](https://github.com/garrytan/gstack) | `669e59d65b48081547de9a3ae202122af5bbe065` | `upstream/gstack/` | 摘录：未收 test/（41M 测试夹具）与 lib/diagram-render 构建产物。并排对比修复循环来源 |
+| 35 | [garrytan/gstack](https://github.com/garrytan/gstack) | `a7585d0e74db25e861a92263fcae7e73a2e4d4ad` | `upstream/gstack/` | 摘录：未收 test/（41M 测试夹具）与 lib/diagram-render 构建产物。并排对比修复循环来源 |
 | 36 | [rastian/interaction-design-skills](https://github.com/rastian/interaction-design-skills) | `a3f092f9bd183eef8c25ec5ea7f0bb97505b94d3` | `upstream/interaction-design-skills/` | 全仓。24 点游戏微细节清单来源 |
 | 37 | [ttengwang/awesome_long_form_video_understanding](https://github.com/ttengwang/awesome_long_form_video_understanding) | `0e25a035559d9e7d420a2a7f0a4724d4723ac2be` | `upstream/awesome-long-form-video-understanding/` | 全仓。长视频理解论文/资源清单 |
 | 38 | [afterxleep/agents](https://github.com/afterxleep/agents) | `ec4c354ad8f26690941353cf4f7516f804f78e91` | `upstream/afterxleep-agents/` | 全仓 |
 | 39 | [Intense-Visions/harness-engineering](https://github.com/Intense-Visions/harness-engineering) | `19bec0c651790fb7ca134224d1384500f2162194` | `upstream/harness-engineering/` | 摘录：根文档 + docs（未收 changes/ 变更档案 28M）+ templates/examples/fixtures/.claude-plugin（未收 agents/ 多平台镜像与 packages/ 产品源码）。视觉回归 harness 来源 |
-| 40 | [vibeeval/vibecosystem](https://github.com/vibeeval/vibecosystem) | `3b763b1fb288f57bfa3cce76ef18184b96461a78` | `upstream/vibecosystem/` | 全仓。visual-verdict 6 维打分（≥90 门禁）来源 |
-| 41 | [uxkin/agent](https://github.com/uxkin/agent) | `6bb351e95de5ddce79bb6bbc5ccd4631eee49eb9` | `upstream/uxkin-agent/` | 全仓。ui-from-screenshot（SAHI 象限切片）来源 |
+| 40 | [vibeeval/vibecosystem](https://github.com/vibeeval/vibecosystem) | `16a4a0e543c75a945e177e94779e07199b0d054f` | `upstream/vibecosystem/` | 全仓。visual-verdict 6 维打分（≥90 门禁）来源 |
+| 41 | [uxkin/agent](https://github.com/uxkin/agent) | `c9425694cbf77ca13c067ae100a34eeec5a2856e` | `upstream/uxkin-agent/` | 全仓。ui-from-screenshot（SAHI 象限切片）来源 |
 
 ## 2026-11-06 增补（Roblox Game Remaker 全量融入）
 
@@ -103,9 +103,3 @@ SKILL.md 更新 + 新脚本 3 + 新参考 4）与新版手册已一并整合（`
 | 44 | [abi/screenshot-to-code](https://github.com/abi/screenshot-to-code) | MIT | `skills/game-render-to-blueprint/`（融合方法一） | 截图/效果图转前端代码工具（81k star）；吸收其分块还原与「生成→截图→对照→修块」迭代收敛策略、原图素材优先提取复用 |
 | 45 | [NoviScl/Design2Code](https://github.com/NoviScl/Design2Code)（斯坦福 SALT-Lab，论文 arXiv:2403.03163）+ [YaoMarkMu/UI2Code](https://github.com/YaoMarkMu/UI2Code) | Design2Code 为 MIT；UI2Code 仓库 API 未返回许可证信息（待核） | `skills/game-render-to-blueprint/`（融合方法二） | 吸收节点层级树拆解（容器嵌套/对齐约束/层叠）、文字先行提取、块级四维评测（块匹配/文字/位置/颜色）驱动的自修正回路 |
 | 46 | [anthropics/skills · frontend-design](https://github.com/anthropics/skills/tree/main/skills/frontend-design)（Anthropic 官方技能，其目录自带 LICENSE.txt）；索引：[travisvn/awesome-claude-skills](https://github.com/travisvn/awesome-claude-skills)、[hesreallyhim/awesome-claude-code](https://github.com/hesreallyhim/awesome-claude-code) | 见其目录 LICENSE.txt；合集为索引引用 | `skills/game-render-to-blueprint/`（融合方法三） | 吸收「AI 默认脸」清单（奶油底+衬线+陶土、近黑+酸绿、报纸细线、SaaS 卡片套件、模板眉题/中点串/箭头尾巴等）与克制原则，适配到风格推及页与文案；有定版效果图时效果图优先于本节 |
-
-## 2026-11-07 增补三（防糊弄铁律总闸门融入 #43）
-
-| # | 来源 | Commit | 整合位置 | 收录范围与说明 |
-|---|---|---|---|---|
-| 47 | 用户自备（2026-11-07 提供，IRONCLAD ANTI-SLOP & EXECUTION GATE） | —（非 GitHub 上游） | `skills/game-render-to-blueprint/`（融入方法五） | 全量原文两件：`ANTI_SLOP_GATE.md`（四道硬闸门：Gate 1 技能/脚本调用锁、Gate 2 视觉零遗漏清点锁、Gate 3 代码零省略与美术全矢量化锁、Gate 4 交付自检与局部冻结锁）+ `verify_no_slop.py`（违禁省略词黑名单 / SVG 与 Path 数量门槛 / 交互函数数量门槛的硬性验收脚本）。按用户令加入第 43 号技能 game-render-to-blueprint 内，作为施工图还原的防糊弄交付闸门 |
