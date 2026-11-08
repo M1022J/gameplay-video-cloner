@@ -152,13 +152,12 @@ def get_cli_parser(user_config: ConfigRegistry):
     parser.add_argument(
         "-o",
         "--output",
-        metavar="video.avi",
+        metavar="video.mp4",
         type=str,
         help=(
-            "If specified, all motion events will be written to a single file"
-            " in order (if not specified, separate files are created for each event)."
-            " Only supported in output modes OPENCV (filename MUST end with .avi)"
-            " and ENCODE (video-only)."
+            "If specified, all motion events will be written to a single file as they are detected."
+            " When this is not set, separate files are created for each event."
+            " Requires output mode to be either ENCODE or OPENCV."
         ),
     )
 
@@ -399,16 +398,6 @@ def get_cli_parser(user_config: ConfigRegistry):
         metavar="time",
         type=timecode_type_check("time"),
         help=("Timecode to stop processing the input (see -st for valid timecode formats)."),
-    )
-
-    # TODO(1.9): Remove -roi (replaced by -r/--region-editor and -a/--add-region).
-    parser.add_argument(
-        "-roi",
-        "--region-of-interest",
-        dest="region_of_interest",
-        metavar="x0 y0 w h",
-        nargs="*",
-        help=argparse.SUPPRESS,
     )
 
     parser.add_argument(

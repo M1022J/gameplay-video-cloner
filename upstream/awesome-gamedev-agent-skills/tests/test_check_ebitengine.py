@@ -39,7 +39,8 @@ class CheckEbitengineTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         report = json.loads(result.stdout)
         self.assertEqual(set(report), {"tool", "schema", "root", "files_checked",
-                                      "error_count", "warning_count", "errors", "warnings", "truncated"})
+                                      "error_count", "warning_count", "errors", "warnings", "truncated",
+                                      "note_count", "notes"})
         self.assertEqual((report["tool"], report["schema"]), ("check_ebitengine", 1))
         self.assertEqual(report["root"], self.root.resolve().as_posix())
         self.assertEqual((report["error_count"], report["warning_count"], report["files_checked"]), (0, 2, 1))
@@ -127,6 +128,46 @@ func f(s *S, r R) { s.audio.NewPlayer(r); s.e.SetMaxTPS(60); audio.CurrentContex
         result = self.run_check("--json", "--strict")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(json.loads(result.stdout)["warning_count"], 0)
+
+    def test_ambiguous_at_calls_are_notes_and_do_not_fail_strict(self):
+        self.write("main.go", '''package main
+import e "github.com/hajimehoshi/ebiten/v2"
+func (g *Game) Draw(screen *e.Image) {
+    g.Map.At(p)
+    grid.At(x, y)
+    screen.At(0, 0)
+    // screen.At(1, 1)
+    s := "screen.At(2, 2)"
+}
+''')
+        result = self.run_check("--json", "--strict")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        report = json.loads(result.stdout)
+        self.assertEqual(report["warning_count"], 0)
+        self.assertEqual(report["note_count"], 3)
+        self.assertEqual([n["line"] for n in report["notes"]], [4, 5, 6])
+        text = self.run_check("--strict")
+        self.assertEqual(text.returncode, 0)
+        self.assertIn("NOTE main.go:4:", text.stdout)
+
+    def test_readpixels_stays_warning_and_notes_obey_report_limit(self):
+        self.write("main.go", '''package main
+import "github.com/hajimehoshi/ebiten/v2"
+func (g *Game) Update() error {
+    g.Map.At(p)
+    g.Map.At(q)
+    g.image.ReadPixels(pixels)
+    return nil
+}
+''')
+        result = self.run_check("--json", "--strict", "--max-issues", "1")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        report = json.loads(result.stdout)
+        self.assertEqual((report["warning_count"], report["note_count"]), (1, 2))
+        self.assertEqual(len(report["warnings"]), 1)
+        self.assertEqual(len(report["notes"]), 0)
+        self.assertIn("GPU readback", report["warnings"][0]["message"])
+        self.assertTrue(report["truncated"])
 
     def test_deprecated_player_methods_are_checked_only_with_audio_import(self):
         body = "func f(p *P, file *F) { p.Close(); p.Seek(d); p.Current(); file.Seek(0, 0) }\n"

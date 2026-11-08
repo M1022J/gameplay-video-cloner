@@ -14,6 +14,7 @@ DVR-Scan v2.0 overhauls how timestamps are handled and simplifies the desktop ap
 #### Changelog
 
  * [general] DVR-Scan now requires PySceneDetect 0.7.2 or higher
+ * [general] Minimum supported Python version is now 3.11 (Python 3.10 is [EOL](https://devguide.python.org/versions/))
  * [general] Modernize project branding and logos, improve legibility at smaller sizes
  * [feature] New Scan Wizard provides a simplified step-by-step workflow (add videos, pick a preset, choose output, scan) and is now the default mode when launching `dvr-scan-app` [#263](https://github.com/Breakthrough/DVR-Scan/issues/263)
     * Set the new `startup-mode` config option to `classic` to start in the full settings view instead; you can also switch between modes at any time
@@ -22,6 +23,7 @@ DVR-Scan v2.0 overhauls how timestamps are handled and simplifies the desktop ap
     * The `Default` preset is the user config file itself, replacing the `Save As User Default` and `Reset To User Default` menu items
  * [feature] Video files can now be dragged and dropped onto the app window to add them as inputs; dropping a `.cfg` file loads it as the active settings [#263](https://github.com/Breakthrough/DVR-Scan/issues/263)
  * [feature] Variable framerate (VFR) videos are now handled correctly: event start/end times are always derived from presentation timestamps [#20](https://github.com/Breakthrough/DVR-Scan/issues/20)
+ * [breaking] Remove the `-roi`/`--region-of-interest` option and the `region-of-interest` config option (deprecated since v1.6). Use the region editor (`-r`/`--region-editor`), `-a`/`--add-region`, or `-R`/`--load-region` instead.
  * [breaking] Remove `--use-pts` option; presentation timestamps are now always used for event timing (the `use-pts` config option is deprecated and has no effect)
  * [general] Reported event timecodes are now exact rather than quantized to whole frames; formatted timecodes may differ by up to 1ms from previous versions. Frame numbers shown in reports and overlays are approximations on VFR inputs.
  * [general] When using `--frame-skip`, the post-event window now covers the exact amount of time specified rather than rounding down to a multiple of the skip interval, and back-to-back events share their boundary timecode instead of leaving a one-frame gap.
@@ -55,6 +57,12 @@ DVR-Scan v2.0 overhauls how timestamps are handled and simplifies the desktop ap
  * [bugfix] Log an explicit error message if OpenCV `VideoWriter` fails to open an output video file [#214](https://github.com/Breakthrough/DVR-Scan/issues/214)
  * [general] Log active motion detection and event parameters (`threshold`, `min_event_len`, `time_pre_event`, `time_post_event`, `merge_window`, `downscale_factor`, `frame_skip`) at the start of a scan [#186](https://github.com/Breakthrough/DVR-Scan/issues/186)
  * [feature] Add `timecode-list-format` config option to control the format of the event list printed at the end of a scan (and output in `-q`/`--quiet` mode): `parts` (`start-end,start-end,...`, syntax of `mkvmerge --split parts:`), `timecodes` (default, `start,end,start,end,...`, syntax of `mkvmerge --split timecodes:`), or `lines` (one `start-end` pair per line) [#78](https://github.com/Breakthrough/DVR-Scan/issues/78)
+ * [general] Remove the OpenCV version cap (`<4.13`); DVR-Scan now installs with the latest OpenCV 4.x/5.x releases [#257](https://github.com/Breakthrough/DVR-Scan/issues/257)
+ * [general] Updates to Windows distributions:
+     - Python 3.12 -> Python 3.13
+     - OpenCV 4.10.0.84 -> 5.0.0.93
+     - PyAV 18.0.0 -> 19.0.2
+     - ffmpeg 8.0 -> 9.0.2
 
 ### 1.8.2.1 (2026-05-09)
 

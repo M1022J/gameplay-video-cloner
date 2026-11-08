@@ -109,6 +109,9 @@ they behave the same in every skill:
   `files_checked`, `error_count`, `warning_count`, `errors`, `warnings` and `truncated`;
 - an `ERROR` only for something that really breaks the project; anything that might be fine is a
   `WARNING`;
+- purely informational, untyped matches may be `NOTE`s that never affect exit status;
+  checkers that emit them add `note_count` and `notes` to JSON. `--max-issues` limits the
+  combined report, warnings/errors before notes, without changing totals;
 - end-to-end tests in `tests/test_<script>.py` that build their fixtures in a temporary folder.
 
 The SKILL.md step that runs the script says when to run it and what to do with the result, and

@@ -4,19 +4,19 @@
 
 <p align="center">
   <img src="docs/assets/awesome-gamedev-agent-skills-banner.png" width="820"
-       alt="awesome-gamedev-agent-skills — game-dev skills for AI coding agents. 76 skills and a router across 12 engines, including an art-direction and asset-production workflow.">
+       alt="awesome-gamedev-agent-skills — game-dev skills for AI coding agents. 77 skills and a router across 12 engines, including an art-direction and asset-production workflow.">
 </p>
 
-**76 game-dev skills for your AI coding agent — install once, and a router loads the
+**77 game-dev skills for your AI coding agent — install once, and a router loads the
 right skill for whatever you're building.**
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-76%20%2B%20router-brightgreen)](skills/)
+[![Skills](https://img.shields.io/badge/skills-77%20%2B%20router-brightgreen)](skills/)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-informational)](docs/SKILL-FORMAT.md)
 [![Last commit](https://img.shields.io/github/last-commit/gamedev-skills/awesome-gamedev-agent-skills)](https://github.com/gamedev-skills/awesome-gamedev-agent-skills/commits/main)
 
 [Agent Skills](docs/SKILL-FORMAT.md) are small capability files an AI agent loads only when it
-needs them. This repo gives your agent **76 game-dev skills** and a **router** that picks the
+needs them. This repo gives your agent **77 game-dev skills** and a **router** that picks the
 right ones for you. You describe what you're building; the agent loads the matching engine and
 task skills before it writes code.
 
@@ -40,7 +40,7 @@ task skills before it writes code.
 ## Quick start
 
 **One command, any agent.** The [`skills`](https://www.npmjs.com/package/skills) CLI detects the
-coding agent you already use and installs the router plus all 76 skills into the right place:
+coding agent you already use and installs the router plus all 77 skills into the right place:
 
 ```bash
 npx skills add gamedev-skills/awesome-gamedev-agent-skills
@@ -120,7 +120,7 @@ engine), while disciplines, genres, and workflows are additive on top.
 
 ## Catalog
 
-76 skills across 9 categories — each links to its `SKILL.md` below.
+77 skills across 9 categories — each links to its `SKILL.md` below.
 
 ### Engines
 
@@ -186,7 +186,7 @@ engine), while disciplines, genres, and workflows are additive on top.
 | [`threejs-gltf-loading`](skills/web-engines/threejs-gltf-loading/SKILL.md) | Loading glTF/GLB + skinned animation (`GLTFLoader`/`AnimationMixer`) |
 | [`threejs-materials-lighting`](skills/web-engines/threejs-materials-lighting/SKILL.md) | Materials (PBR), lights, shadows, environment maps |
 
-#### Other engines — 11 ([`skills/other-engines/`](skills/other-engines/)) · Bevy · pygame · LÖVE · Defold · Roblox
+#### Other engines — 12 ([`skills/other-engines/`](skills/other-engines/)) · Bevy · pygame · LÖVE · Defold · Roblox
 
 | Skill | Scope |
 |-------|-------|
@@ -201,6 +201,7 @@ engine), while disciplines, genres, and workflows are additive on top.
 | [`roblox-characters`](skills/other-engines/roblox-characters/SKILL.md) | Character lifecycle: spawn/respawn scopes, `Humanoid`, rigs, `Animator` tracks |
 | [`roblox-physics`](skills/other-engines/roblox-physics/SKILL.md) | Assemblies, constraints, collision/query policy, raycasts, forces, network ownership |
 | [`roblox-studio-workflow`](skills/other-engines/roblox-studio-workflow/SKILL.md) | Explorer-first place editing, structure preservation, multi-context Studio verification |
+| [`roblox-simulator-economy`](skills/other-engines/roblox-simulator-economy/SKILL.md) | Simulator/tycoon/idle economy: cost curves, buy max, rebirths, offline earnings, big-number display, server-owned purchases, paid random item odds (Lune 0.11.0 pacing calculator) |
 
 ### Disciplines — 15 ([`skills/disciplines/`](skills/disciplines/))
 
@@ -293,7 +294,7 @@ Here's the shape of a single exchange (illustrative):
 > add a double jump to my player
 
 Detected Godot (project.godot). Loading godot-2d-movement for the controller
-and platformer for jump feel — skipping the other 74 skills.
+and platformer for jump feel — skipping the other 75 skills.
 ```
 
 ```gdscript
@@ -322,7 +323,7 @@ func _physics_process(delta: float) -> void:
 ## Repository layout
 
 ```
-skills/        76 specialized skills, grouped by engine / discipline / genre / workflow
+skills/        77 specialized skills, grouped by engine / discipline / genre / workflow
 router/        the master router skill (+ references/)
 docs/          authoring standard, installation, compatibility
 templates/     SKILL.md template

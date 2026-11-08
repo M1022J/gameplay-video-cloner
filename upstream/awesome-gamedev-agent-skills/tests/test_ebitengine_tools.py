@@ -8,6 +8,7 @@ require a display, Go, network access, or a signing identity.
 import contextlib
 import importlib.util
 import io
+import os
 import plistlib
 import struct
 import subprocess
@@ -145,7 +146,10 @@ import (
         with (app / "Contents/Info.plist").open("rb") as f:
             self.assertEqual(plistlib.load(f)["CFBundleExecutable"], "testgame")
         target = app / "Contents/MacOS/testgame"
-        self.assertTrue(target.stat().st_mode & 0o111)
+        # Windows does not expose POSIX execute bits for an extensionless file.
+        # Keep the rest of the bundle/preservation test active on every platform.
+        if os.name != "nt":
+            self.assertTrue(target.stat().st_mode & 0o111)
         original = target.read_bytes()
         # A failed universal merge should never destroy an existing good bundle.
         argv = ["package_macos_app.py", *map(str, self.package_args(arm, "--amd64", self.macho_header("amd64"), "--force"))]

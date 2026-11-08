@@ -8,7 +8,7 @@
     {
       "name": "gamedev",
       "source": "./",
-      "description": "Everything: the master router plus all 76 game-dev skills across every engine, discipline, genre, and workflow.",
+      "description": "Everything: the master router plus all 77 game-dev skills across every engine, discipline, genre, and workflow.",
       "strict": false,
       "skills": [
         "./router",
@@ -60,6 +60,7 @@
         "./skills/other-engines/roblox-characters",
         "./skills/other-engines/roblox-physics",
         "./skills/other-engines/roblox-studio-workflow",
+        "./skills/other-engines/roblox-simulator-economy",
         "./skills/disciplines/create-game-assets",
         "./skills/disciplines/game-ai",
         "./skills/disciplines/procedural-gen",
@@ -192,7 +193,8 @@
         "./skills/other-engines/roblox-networking",
         "./skills/other-engines/roblox-characters",
         "./skills/other-engines/roblox-physics",
-        "./skills/other-engines/roblox-studio-workflow"
+        "./skills/other-engines/roblox-studio-workflow",
+        "./skills/other-engines/roblox-simulator-economy"
       ]
     },
     {
