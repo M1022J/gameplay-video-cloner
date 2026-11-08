@@ -1,0 +1,6 @@
+# vibecosystem - Codex CLI project configuration
+# https://github.com/vibeeval/vibecosystem
+
+# Keep model, history, and skill discovery settings in the user's Codex
+# configuration. This project file only supplies project-document fallbacks.
+project_doc_fallback_filenames = ["AGENTS.md", "CLAUDE.md"]

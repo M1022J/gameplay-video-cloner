@@ -1,0 +1,200 @@
+name: Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-agents:
+    name: Validate Agents
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check agent frontmatter
+        run: |
+          echo "Checking agent YAML frontmatter..."
+          errors=0
+          for f in agents/*.md; do
+            if ! head -1 "$f" | grep -q "^---"; then
+              echo "ERROR: $f missing YAML frontmatter"
+              errors=$((errors + 1))
+            fi
+          done
+          if [ $errors -gt 0 ]; then
+            echo "$errors agent(s) have frontmatter issues"
+            exit 1
+          fi
+          echo "All agents have valid frontmatter"
+
+      - name: Count assets
+        run: |
+          agents=$(ls agents/*.md 2>/dev/null | wc -l)
+          skills=$(find skills -maxdepth 1 -type d 2>/dev/null | tail -n +2 | wc -l)
+          hooks=$(ls hooks/src/*.ts 2>/dev/null | wc -l)
+          rules=$(ls rules/*.md 2>/dev/null | wc -l)
+          echo "Agents: $agents"
+          echo "Skills: $skills"
+          echo "Hooks: $hooks"
+          echo "Rules: $rules"
+
+      - name: Check documented counts match filesystem
+        run: |
+          set -e
+          agents=$(ls agents/*.md | wc -l | tr -d ' ')
+          skills=$(find skills -maxdepth 1 -type d | tail -n +2 | wc -l | tr -d ' ')
+          hooks=$(ls hooks/src/*.ts | wc -l | tr -d ' ')
+          rules=$(ls rules/*.md | wc -l | tr -d ' ')
+          fail=0
+          check() {
+            if ! grep -qF "$2" "$1"; then
+              echo "DRIFT: $1 does not contain '$2'"
+              fail=1
+            fi
+          }
+          check README.md "agents-${agents}-blue"
+          check README.md "skills-${skills}-green"
+          check README.md "hooks-${hooks}-orange"
+          check README.md "rules-${rules}-red"
+          check plugin.json "${agents} agents, ${skills} skills, ${hooks} hooks"
+          check package.json "${agents} agents, ${skills} skills, ${hooks} hooks"
+          check marketplace.json "\"agents\": ${agents}"
+          check marketplace.json "\"skills\": ${skills}"
+          check marketplace.json "\"hooks\": ${hooks}"
+          check bin/cli.mjs "${agents} agents"
+          check bin/cli.mjs "${skills} skills"
+          check install.sh "core"
+          check install.sh "full"
+          check install-remote.sh "full"
+          if [ "$fail" -eq 1 ]; then
+            echo ""
+            echo "Documented counts drifted from the filesystem."
+            echo "Actual: ${agents} agents / ${skills} skills / ${hooks} hooks / ${rules} rules"
+            exit 1
+          fi
+          echo "Counts in sync: ${agents}/${skills}/${hooks}/${rules}"
+
+  validate-skills:
+    name: Validate Skills
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check skill frontmatter
+        run: |
+          echo "Checking skill SKILL.md frontmatter..."
+          errors=0
+          for f in $(find skills -maxdepth 2 -name "SKILL.md"); do
+            if ! head -1 "$f" | grep -q "^---"; then
+              echo "WARNING: $f missing YAML frontmatter"
+              errors=$((errors + 1))
+            fi
+          done
+          echo "$errors skill(s) have frontmatter issues (non-blocking)"
+
+      - name: Check top-level skills have name field
+        run: |
+          set -e
+          missing=0
+          for f in skills/*/SKILL.md; do
+            # \r? : bazi skill dosyalari CRLF satir sonu kullaniyor
+            if ! awk '/^---\r?$/{n++; next} n==1 && /^name:/{found=1} END{exit !found}' "$f"; then
+              echo "MISSING name: $f"
+              missing=$((missing+1))
+            fi
+          done
+          if [ "$missing" -gt 0 ]; then
+            echo "$missing skill(s) missing required 'name' frontmatter field (agent-linter ERROR rule)"
+            exit 1
+          fi
+          echo "All top-level skills have name frontmatter"
+
+      - name: Check no lowercase skill.md (breaks case-sensitive filesystems)
+        run: |
+          lower=$(git ls-files 'skills/' | grep '/skill\.md$' | wc -l | tr -d ' ')
+          if [ "$lower" -gt 0 ]; then
+            echo "ERROR: $lower lowercase skill.md file(s) found - Claude Code only loads SKILL.md on case-sensitive filesystems:"
+            git ls-files 'skills/' | grep '/skill\.md$'
+            exit 1
+          fi
+          echo "No lowercase skill.md files"
+
+  validate-install:
+    name: Validate Install Script
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Syntax check install.sh
+        run: bash -n install.sh
+
+      - name: ShellCheck
+        uses: ludeeus/action-shellcheck@2.0.0
+        with:
+          scandir: '.'
+          additional_files: 'install.sh'
+          severity: warning
+
+  test-hooks:
+    name: Test Hooks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: cd hooks && npm ci
+
+      - name: Type check
+        run: cd hooks && npx tsc --noEmit
+
+      - name: Build hooks
+        run: cd hooks && npm run build
+
+      - name: Verify dist is up to date
+        run: |
+          cd hooks
+          if ! git diff --quiet dist/; then
+            echo "ERROR: dist/ is out of date. Run 'cd hooks && npm run build' and commit."
+            git diff --stat dist/
+            exit 1
+          fi
+
+      - name: Run tests
+        run: cd hooks && npm test
+
+      - name: Test installer and packed runtime boundaries
+        run: npm test && npm run test:installers
+
+      - name: Install optional dashboard dependencies
+        run: npm ci --ignore-scripts --prefix tools/dashboard
+
+      - name: Test local dashboard and distributed event pipeline
+        run: npm test --prefix tools/dashboard
+
+      - name: Verify generated dashboard CSS
+        run: |
+          npm run build:css --prefix tools/dashboard
+          git diff --exit-code -- tools/dashboard/dashboard.css
+
+  markdown-lint:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint markdown
+        uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          globs: |
+            README.md
+            CONTRIBUTING.md
+            SECURITY.md
+            CHANGELOG.md
+            CODE_OF_CONDUCT.md
+        continue-on-error: true
